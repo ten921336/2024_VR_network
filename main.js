@@ -399,10 +399,10 @@ function init() {
     });
 
     //葉ノードの位置を修正
-    const adjacencyMap = createAdjacencyMap(edgesData);
-    Object.values(nodePosition).forEach((position, index) => {
-      generateNewPosition(index, nodePosition, adjacencyMap);
-    });
+    // const adjacencyMap = createAdjacencyMap(edgesData);
+    // Object.values(nodePosition).forEach((position, index) => {
+    //   generateNewPosition(index, nodePosition, adjacencyMap);
+    // });
   }
   /* -------------------座標生成 ここまで------------------- */
 
@@ -570,30 +570,31 @@ function init() {
     }
   }
 
-  function updateAllRandomNode() {
-    nodePositions.forEach((position, index) => {
-      const newPosition = {
-        x: Math.random(),
-        y: Math.random(),
-        z: Math.random()
-      };
+  // function updateAllRandomNode() {
+  //   nodePositions.forEach((position, index) => {
+  //     const newPosition = {
+  //       x: Math.random(),
+  //       y: Math.random(),
+  //       z: Math.random()
+  //     };
 
-      const node = scene.children.find((child) => child instanceof THREE.Mesh && child.position.equals(position));
-      if (node) {
-        node.position.set(newPosition.x, newPosition.y, newPosition.z);
-      }
+  //     const node = scene.children.find((child) => child instanceof THREE.Mesh && child.position.equals(position));
+  //     if (node) {
+  //       node.position.set(newPosition.x, newPosition.y, newPosition.z);
+  //     }
 
-      nodePositions[index] = newPosition;
-    });
+  //     nodePositions[index] = newPosition;
+  //   });
 
-    //ノードとエッジを消す
-    clearScene();
-    //変更されたノードの位置を再描画
-    renderNetwork(networkData, group, camera, renderer, nodePositions);
+  //   //ノードとエッジを消す
+  //   clearScene();
+  //   //変更されたノードの位置を再描画
+  //   renderNetwork(networkData, group, camera, renderer, nodePositions);
 
-    // レンダリング
-    renderer.render(scene, camera);
-  }
+  //   // レンダリング
+  //   renderer.render(scene, camera);
+  // }
+
   /* -------------------座標の更新 ここまで------------------- */
 
 
