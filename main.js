@@ -327,7 +327,7 @@ function init() {
 
 
   /* -------------------座標生成 ここから------------------- */
-  let radiusP = 20; //球面座標系の半径、原点からの距離
+  let radiusP = 15; //球面座標系の半径、原点からの距離
   let theta = Math.PI / 2; //水平方向の回転。角度はラジアンで指定。
   let phi = Math.PI / 2; //縦方向の回転。角度はラジアンで指定。
   let positionC1 = 0;
@@ -339,7 +339,7 @@ function init() {
     const position = {
       x: radiusP * Math.sin(phi) * Math.cos(theta),
       y: radiusP * Math.cos(phi),
-      z: radiusP * Math.sin(phi) * Math.sin(theta) - 50
+      z: radiusP * Math.sin(phi) * Math.sin(theta)
     };
 
     positionC1 += 1;
