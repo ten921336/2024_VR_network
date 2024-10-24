@@ -9,9 +9,6 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 //ファイル名宣言
 const fileName = "bio-CE-CX300.csv";
 
-//OrbitControls(マウスで動かせる設定)の設定
-const cameraControl = false; //true:有効　false:無効
-
 //データの座標範囲の上限と下限の設定
 let max = 1;
 let min = -max;
@@ -29,12 +26,12 @@ const coefficient = 20;
 //半径
 let radius = 0.2;
 
-/*　けしてもOK */
-//自動設定
 //範囲
 const autoRangeSetting = true; //true:データの数に応じて範囲を設定　false:グローバル変数を参照
+
 //削除回数
 const autodeleteSetting = true; //true:データの数に応じて削除回数を設定　false:グローバル変数を参照
+
 //半径
 const autoRadius = true; //true:データの数に応じてnodeの半径を設定　false:グローバル変数を参照
 
@@ -51,7 +48,9 @@ function init() {
 
   // シーンの作成
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000);
+
+  //　背景の色
+  scene.background = new THREE.Color(0x00e6e6);
 
   // グループの準備
   const group = new THREE.Group();
@@ -80,39 +79,11 @@ function init() {
   cameraContainer.add(camera);
   scene.add(cameraContainer);
   cameraContainer.position.x = 0;
-  
-  
+
   /* --------------- 基本的な設定 ここまで --------------- */
 
 
 
-  /* --------------- OrbitControls(マウスで動かせる設定)ここから --------------- */
-  if(cameraControl){
-    // OrbitControlsの作成
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; // ダンピングまたは自動回転が有効な場合、アニメーションループが必要です
-    controls.dampingFactor = 0.25;
-    controls.screenSpacePanning = false;
-    controls.maxPolarAngle = Math.PI / 2;
-    // VRモードのフラグ
-    let inVRMode = false;
-    // VRButtonのイベントリスナーを使用してVRモードの開始と終了を検知
-    VRButton.createButton(renderer).addEventListener('selectstart', function () {
-      // VRモードが開始された時の処理
-      inVRMode = true;
-      controls.enabled = false; // OrbitControlsを無効にする
-    });
-
-    VRButton.createButton(renderer).addEventListener('selectend', function () {
-      // VRモードが終了した時の処理
-      inVRMode = false;
-      controls.enabled = true; // OrbitControlsを有効にする
-    });
-  }
-  /* --------------- OrbitControls(マウスで動かせる設定)ここまで --------------- */
-  
-
-  
   /* --------------- 光源設定 ここから --------------- */
   // 光源を作成
   createLights(scene);
@@ -123,8 +94,9 @@ function init() {
     scene.add(ambientLight);
 
     //光源を作成
-    const light = new THREE.DirectionalLight(0xffffff, 0.5);
-    light.position.set(0, 10, 100);
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(0, 3, 0);  //  three.jsは座標系が左右(x)、上下(y)、前後(z)
+    light.castShadow = true;
     scene.add(light);
   }
   /* --------------- 光源設定 ここまで --------------- */
@@ -202,7 +174,7 @@ function init() {
 
       // オブジェクトが動かされたときの処理
       controller.addEventListener('selectend', () => {
-       // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
+        // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
         const matchingIndex = nodePositions.findIndex(node => (
           node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
         ));
@@ -243,30 +215,30 @@ function init() {
   }
 
   // シェイプとコントローラのレイの交差判定
-function intersectObjects(controller) {
-  // 選択時は無処理
-  if (controller.userData.selected !== undefined) return;
+  function intersectObjects(controller) {
+    // 選択時は無処理
+    if (controller.userData.selected !== undefined) return;
 
-  // 光線の取得
-  const line = controller.getObjectByName("line");
+    // 光線の取得
+    const line = controller.getObjectByName("line");
 
-  // レイと交差しているシェイプの取得
-  const intersections = getIntersections(controller);
+    // レイと交差しているシェイプの取得
+    const intersections = getIntersections(controller);
 
-  if (intersections.length > 0) {
-    // 交差時は赤くする
-    const intersection = intersections[0];
-    const object = intersection.object;
-    object.material.emissive.r = 1;
-    intersected.push(object);
+    if (intersections.length > 0) {
+      // 交差時は赤くする
+      const intersection = intersections[0];
+      const object = intersection.object;
+      object.material.emissive.r = 1;
+      intersected.push(object);
 
-    // 交差時は光線の長さをシェイプまでにする
-    line.scale.z = intersection.distance;
-  } else {
-    // 光線の長さを固定長に戻す
-    line.scale.z = 5;
+      // 交差時は光線の長さをシェイプまでにする
+      line.scale.z = intersection.distance;
+    } else {
+      // 光線の長さを固定長に戻す
+      line.scale.z = 30;
+    }
   }
-}
 
   // ワーク行列
   const tempMatrix = new THREE.Matrix4();
@@ -302,7 +274,7 @@ function intersectObjects(controller) {
 
   /* -------------------ファイル読み込み ここから------------------- */
   loadCSVAndInit(fileName);
-  
+
   // CSVファイルの読み込みとシーンの初期化
   function loadCSVAndInit(name) {
     const xhr = new XMLHttpRequest();
@@ -348,7 +320,7 @@ function intersectObjects(controller) {
       }
     }
     // エッジ情報が存在する場合、その情報を返す
-    return edges.length > 0 ?  edges  : null;
+    return edges.length > 0 ? edges : null;
   }
   /* -------------------ファイル読み込み ここまで------------------- */
 
@@ -358,9 +330,9 @@ function intersectObjects(controller) {
   function createPositions() {
     // ランダムな座標を生成
     const position = {
-      x: Math.random() * (max + 1 - min)  + min,
-      y: Math.random() * (max + 1 - min)  + min,
-      z: Math.random() * (max + 1 - min)  + min
+      x: Math.random() * (max + 1 - min) + min,
+      y: Math.random() * (max + 1 - min) + min,
+      z: Math.random() * (max + 1 - min) + min
     };
 
     // 生成したノードの座標を配列に追加
@@ -372,15 +344,15 @@ function intersectObjects(controller) {
 
   // 新しい座標を生成する関数
   function generateNewPosition(index, nodePosition, adjacencyMap) {
-    if(adjacencyMap[index].length <= 1){
+    if (adjacencyMap[index].length <= 1) {
       const previousNodePosition = index > 0 ? nodePosition[index - 1] : { x: 0, y: 0, z: 0 };
       // 連結がない場合、ランダムに離す
-      const randomDisplacement = { 
-        x: (Math.random() - 0.5) * coefficient, 
-        y: (Math.random() - 0.5) * coefficient, 
-        z: (Math.random() - 0.5) * coefficient 
+      const randomDisplacement = {
+        x: (Math.random() - 0.5) * coefficient,
+        y: (Math.random() - 0.5) * coefficient,
+        z: (Math.random() - 0.5) * coefficient
       };
-        
+
       const newPosition = {
         x: previousNodePosition.x + randomDisplacement.x,
         y: previousNodePosition.y + randomDisplacement.y,
@@ -389,11 +361,11 @@ function intersectObjects(controller) {
       // nodePositions 配列の選択されたノードの位置も更新
       nodePositions[index] = newPosition;
     }
-    
+
   }
 
   // ランダムな座標を生成して nodePositions 配列に追加する関数
-  function generateRandomNodePositions(edgesData,nodePosition) {
+  function generateRandomNodePositions(edgesData, nodePosition) {
     const uniqueNodes = new Set();
     const nodePositions = new Map();
 
@@ -412,7 +384,7 @@ function intersectObjects(controller) {
     //葉ノードの位置を修正
     const adjacencyMap = createAdjacencyMap(edgesData);
     Object.values(nodePosition).forEach((position, index) => {
-      generateNewPosition(index, nodePosition , adjacencyMap);
+      generateNewPosition(index, nodePosition, adjacencyMap);
     });
   }
   /* -------------------座標生成 ここまで------------------- */
@@ -425,6 +397,7 @@ function intersectObjects(controller) {
     const geometry = new THREE.BufferGeometry().setFromPoints([sourcePosition, targetPosition]);
     const material = new THREE.LineBasicMaterial({ color: 0xffffff });
     const edge = new THREE.Line(geometry, material);
+    edge.castShadow = true; //
     scene.add(edge);
   }
 
@@ -441,7 +414,7 @@ function intersectObjects(controller) {
   /* -------------------エッジ生成 ここまで------------------- */
 
 
-  
+
   /* -------------------ネットワーク構造図の生成 ここから------------------- */
   function renderNetwork(edgesData, group, camera, renderer, nodePositions) {
     // ノードを作成
@@ -456,17 +429,17 @@ function intersectObjects(controller) {
       // 2つ以上のノードがつながっているノード
       if (adjacencyMap[index].length >= 2) {
         // 2通常のノード
-        geometry = new THREE.BoxGeometry(radius*2, radius*2, radius*2);
+        geometry = new THREE.BoxGeometry(radius * 2, radius * 2, radius * 2);
         material = new THREE.MeshLambertMaterial({ color: 0x7fbfff });
       } else {
         // 1つしかノードがつながっていない葉ノード
-        if(adjacencyMap[adjacencyMap[index]].length >=2){
+        if (adjacencyMap[adjacencyMap[index]].length >= 2) {
           //1つ前のノードが2つ以上のノードがつながっているノード
           geometry = new THREE.SphereGeometry(radius, 32, 32);
           material = new THREE.MeshLambertMaterial({ color: 0xffc0cb });
-        }else{
+        } else {
           //1つ前のノードが自分自身としかつながっていないノード
-          geometry =  new THREE.TetrahedronGeometry();
+          geometry = new THREE.TetrahedronGeometry();
           material = new THREE.MeshLambertMaterial({ color: 0xa4eba4 });
         }
       }
@@ -475,17 +448,17 @@ function intersectObjects(controller) {
       node.position.set(position.x, position.y, position.z);
       group.add(node);
     });
-  
+
     // エッジを作成
     renderEdges(edgesData, scene, nodePositions);
-  
+
     // レンダリングループ
     renderer.setAnimationLoop(() => {
       renderer.render(scene, camera);
     });
   }
   /* -------------------ネットワーク構造図の生成 ここまで------------------- */
-  
+
 
 
   /* ------------------- 隣接リストを作成 ここから------------------- */
@@ -501,7 +474,7 @@ function intersectObjects(controller) {
 
 
 
-  
+
   /* ------------------- リサイズ処理 ここから------------------- */
   function onResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -517,9 +490,9 @@ function intersectObjects(controller) {
   function updateAllNode() {
     nodePositions.forEach((position, index) => {
       const newPosition = {
-        x: Math.random() * (max + 1 - min) + min,
-        y: Math.random() * (max + 1 - min) + min,
-        z: Math.random() * (max + 1 - min) + min
+        x: Math.random(),
+        y: Math.random(),
+        z: Math.random()
       };
 
       const node = scene.children.find((child) => child instanceof THREE.Mesh && child.position.equals(position));
@@ -529,11 +502,11 @@ function intersectObjects(controller) {
 
       nodePositions[index] = newPosition;
     });
-    
+
     //葉ノードの位置を修正
     const adjacencyMap = createAdjacencyMap(networkData);
     Object.values(nodePositions).forEach((position, index) => {
-      generateNewPosition(index, nodePositions , adjacencyMap);
+      generateNewPosition(index, nodePositions, adjacencyMap);
     });
 
     //ノードとエッジを消す
@@ -554,9 +527,9 @@ function intersectObjects(controller) {
 
       // 選択されたノードの位置を更新
       const newPosition = {
-        x: Math.random() * (max + 1 - min) + min,
-        y: Math.random() * (max + 1 - min) + min,
-        z: Math.random() * (max + 1 - min) + min
+        x: Math.random(),
+        y: Math.random(),
+        z: Math.random()
       };
 
       // 選択されたノードを取得し、位置を更新
@@ -574,7 +547,7 @@ function intersectObjects(controller) {
       clearScene();
       //変更されたノードの位置を再描画
       renderNetwork(networkData, group, camera, renderer, nodePositions);
-      
+
       // レンダリング
       renderer.render(scene, camera);
     }
@@ -583,9 +556,9 @@ function intersectObjects(controller) {
   function updateAllRandomNode() {
     nodePositions.forEach((position, index) => {
       const newPosition = {
-        x: Math.random() * (max + 1 - min) + min,
-        y: Math.random() * (max + 1 - min) + min,
-        z: Math.random() * (max + 1 - min) + min
+        x: Math.random(),
+        y: Math.random(),
+        z: Math.random()
       };
 
       const node = scene.children.find((child) => child instanceof THREE.Mesh && child.position.equals(position));
@@ -595,7 +568,7 @@ function intersectObjects(controller) {
 
       nodePositions[index] = newPosition;
     });
-    
+
     //ノードとエッジを消す
     clearScene();
     //変更されたノードの位置を再描画
@@ -636,60 +609,31 @@ function intersectObjects(controller) {
 
 
   /* -------------------自動設定 ここから------------------- */
-  function autoSetting(edgesData){
+  function autoSetting(edgesData) {
     //範囲
-    if(autoRangeSetting){
-      max = edgesData.length/4;
+    if (autoRangeSetting) {
+      max = edgesData.length / 4;
       min = -max
     }
 
     //削除回数
-    if(autodeleteSetting){
-      deleteTimes = edgesData.length/2;
+    if (autodeleteSetting) {
+      deleteTimes = edgesData.length / 2;
     }
 
     //半径
-    if(autoRadius){
-      if(edgesData.length <= 10){
+    if (autoRadius) {
+      if (edgesData.length <= 10) {
         radius = 0.2;
-      }else if(edgesData.length <= 100){
+      } else if (edgesData.length <= 100) {
         radius = 0.4;
-      }else{
-        radius = 0.4 * edgesData.length/100;
+      } else {
+        radius = 0.4 * edgesData.length / 100;
       }
     }
-    console.log('Max:',max,' , Min:', min,' , DeleteTimes:', deleteTimes,' , DeleteTimes:', radius);
+    console.log('Max:', max, ' , Min:', min, ' , DeleteTimes:', deleteTimes, ' , DeleteTimes:', radius);
   }
   /* -------------------自動設定 ここまで------------------- */
-
-
-  
-  /* -------------------キーボード操作設定 ここから------------------- */
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'r') {
-      // 'r' キーが押されたときにランダムなノードの位置を更新して描画する関数
-      updateRandomNode();
-    }else if(event.key === 'a'){
-      // 'a' キーが押されたときにすべてのノードの位置を更新する関数
-      updateAllNode();
-    }else if(event.key === 'f'){
-      // 'f' キーが押されたときにすべてのノードの位置を完全ランダムに更新する関数
-      updateAllRandomNode();
-    }else if(event.key === 'p'){
-      //'p' キーが押されたときにconsoleにノードの座標を表示する
-      console.log(nodePositions);
-    }else if(event.key === 'c'){
-      // 'c' キーが押されたときにシーンをクリアする関数
-      clearScene();
-    }else if(event.key === 'n'){
-      //'n' キーが押されたときに現在のノードの位置に描画する(消した後に戻す用)
-      renderNetwork(networkData, group, camera, renderer, nodePositions);
-    }
-  });
-
-  
-  /* -------------------キーボード操作設定 ここまで------------------- */
-
 
 
   // 毎フレーム時に実行されるループイベント
@@ -697,7 +641,7 @@ function intersectObjects(controller) {
     cleanIntersected();
     intersectObjects(controller0);
     intersectObjects(controller1);
-    
+
     handleController(controller0);
     handleController(controller1);
     // レンダリング
