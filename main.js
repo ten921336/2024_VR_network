@@ -327,13 +327,30 @@ function init() {
 
 
   /* -------------------座標生成 ここから------------------- */
+  let radiusP = 20; //球面座標系の半径、原点からの距離
+  let theta = Math.PI / 2; //水平方向の回転。角度はラジアンで指定。
+  let phi = Math.PI / 2; //縦方向の回転。角度はラジアンで指定。
+  let positionC1 = 0;
+  let positionC2 = 0;
+
   function createPositions() {
-    // ランダムな座標を生成
+    //座標を生成
+
     const position = {
-      x: Math.random() * (max + 1 - min) + min,
-      y: Math.random() * (max + 1 - min) + min,
-      z: Math.random() * (max + 1 - min) + min
+      x: radiusP * Math.sin(phi) * Math.cos(theta),
+      y: radiusP * Math.cos(phi),
+      z: radiusP * Math.sin(phi) * Math.sin(theta) - 50
     };
+
+    positionC1 += 1;
+
+    if (positionC1 > 18) {
+      positionC1 = 0;
+      positionC2 += 1;
+    }
+
+    theta += (Math.PI / 18) * positionC1;
+    phi -= (Math.PI / 18) * positionC2;
 
     // 生成したノードの座標を配列に追加
     nodePositions.push(position);
@@ -348,9 +365,9 @@ function init() {
       const previousNodePosition = index > 0 ? nodePosition[index - 1] : { x: 0, y: 0, z: 0 };
       // 連結がない場合、ランダムに離す
       const randomDisplacement = {
-        x: (Math.random() - 0.5) * coefficient,
-        y: (Math.random() - 0.5) * coefficient,
-        z: (Math.random() - 0.5) * coefficient
+        x: 0,
+        y: 0,
+        z: 0
       };
 
       const newPosition = {
