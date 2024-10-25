@@ -14,7 +14,7 @@ let max = 1;
 let min = -max;
 
 //削除回数
-let deleteTimes = 15;
+let deleteTimes = 2;
 
 // ノード座標を保持する配列
 let nodePositions = [];
@@ -327,8 +327,8 @@ function init() {
 
 
   /* -------------------座標生成 ここから------------------- */
-  let radiusP = 15; //球面座標系の半径、原点からの距離
-  let theta = Math.PI / 2; //水平方向の回転。角度はラジアンで指定。
+  let radiusP = 50; //球面座標系の半径、原点からの距離
+  let theta = Math.PI; //水平方向の回転。角度はラジアンで指定。
   let phi = Math.PI / 2; //縦方向の回転。角度はラジアンで指定。
   let positionC1 = 0;
   let positionC2 = 0;
@@ -344,13 +344,13 @@ function init() {
 
     positionC1 += 1;
 
-    if (positionC1 > 18) {
+    if (positionC1 >= 30) {
       positionC1 = 0;
       positionC2 += 1;
     }
 
-    theta += (Math.PI / 18) * positionC1;
-    phi -= (Math.PI / 18) * positionC2;
+    theta = Math.PI + (Math.PI / 30) * positionC1;
+    phi = Math.PI / 2 - (Math.PI / 30) * positionC2;  //30は横の個数　(csvの個数)/(縦の段数)で良くなるのでは？
 
     // 生成したノードの座標を配列に追加
     nodePositions.push(position);
