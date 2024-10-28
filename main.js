@@ -182,8 +182,8 @@ function init() {
         ));
         if (matchingIndex !== -1) {
           // オブジェクトの座標を更新
-          // nodePositions[matchingIndex] = object.position;
-          nodePositions[matchingIndex] = object.position.set(0, 0, -10);
+          nodePositions[matchingIndex] = object.position;
+          // nodePositions[matchingIndex] = object.position.set(0, 0, -10);
         }
 
 
