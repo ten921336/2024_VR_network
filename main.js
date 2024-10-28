@@ -14,7 +14,7 @@ let max = 2;
 let min = -max;
 
 //削除回数
-let deleteTimes = 5;
+let deleteTimes = 15;
 
 // ノード座標を保持する配列
 let nodePositions = [];
@@ -182,8 +182,8 @@ function init() {
         ));
         if (matchingIndex !== -1) {
           // オブジェクトの座標を更新
-          nodePositions[matchingIndex] = object.position;
-          // nodePositions[matchingIndex] = object.position.set(0, 0, -10);
+          // nodePositions[matchingIndex] = object.position;
+          nodePositions[matchingIndex] = object.position.set(0, 0, -10);
         }
 
 
