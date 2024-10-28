@@ -255,19 +255,20 @@ function init() {
   }
 
   // コントローラーイベントの処理
-  function handleController(controller) {
-    const userData = controller.userData;
-    if (userData.isSelecting === true) {
-      // コントローラーボタンが押された際の処理
-      const cube = createCube();
-      cube.position.set(
-        Math.random() * -1000 - 300,  // x座標を-5から5の範囲でランダムに設定
-        0,  // y座標
-        Math.random() * -1000 - 300   // z座標を-5から5の範囲でランダムに設定
-      );
-      scene.add(cube);
-    }
-  }
+  // function handleController(controller) {
+  //   const userData = controller.userData;
+  //   if (userData.isSelecting === true) {
+  //     // コントローラーボタンが押された際の処理
+  //     const cube = createCube();
+  //     cube.position.set(
+  //       Math.random() * -1000 - 300,  // x座標を-5から5の範囲でランダムに設定
+  //       0,  // y座標
+  //       Math.random() * -1000 - 300   // z座標を-5から5の範囲でランダムに設定
+  //     );
+  //     scene.add(cube);
+  //   }
+  // }
+
   /* -------------------コントローラー設定 ここまで------------------- */
 
 
