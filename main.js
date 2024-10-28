@@ -174,18 +174,25 @@ function init() {
 
       // オブジェクトが動かされたときの処理
       controller.addEventListener('selectend', () => {
+
         // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
+        //・・・つまりnodePositions配列からコントローラーで選択しているノードを選び出す＝そのために座標が一致しているものを探すってこど？
         const matchingIndex = nodePositions.findIndex(node => (
           node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
         ));
         if (matchingIndex !== -1) {
           // オブジェクトの座標を更新
-          nodePositions[matchingIndex] = object.position;
+          // nodePositions[matchingIndex] = object.position;
+          nodePositions[matchingIndex] = object.position.set(0, 0, -10);
         }
+
+
+
         //ノードとエッジを消す
         clearScene();
         //変更されたノードの位置を再描画
         renderNetwork(networkData, group, camera, renderer, nodePositions);
+
       });
     }
   }
@@ -378,7 +385,7 @@ function init() {
 
   }
 
-  // ランダムな座標を生成して nodePositions 配列に追加する関数
+  // 座標を生成して nodePositions 配列に追加する関数
   function generateNodePositions(edgesData, nodePosition) {
     const uniqueNodes = new Set();
     const nodePositions = new Map();
@@ -632,9 +639,9 @@ function init() {
     }
 
     //削除回数
-    if (autodeleteSetting) {
-      deleteTimes = edgesData.length / 2;
-    }
+    // if (autodeleteSetting) {
+    //   deleteTimes = edgesData.length / 2;
+    // }
 
     //半径
     if (autoRadius) {
@@ -646,7 +653,7 @@ function init() {
         radius = 0.4 * edgesData.length / 100;
       }
     }
-    console.log('Max:', max, ' , Min:', min, ' , DeleteTimes:', deleteTimes, ' , DeleteTimes:', radius);
+    //console.log('Max:', max, ' , Min:', min, ' , DeleteTimes:', deleteTimes, ' , DeleteTimes:', radius);
   }
   /* -------------------自動設定 ここまで------------------- */
 
