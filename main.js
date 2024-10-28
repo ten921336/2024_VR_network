@@ -145,13 +145,57 @@ function init() {
   const controller1 = addController(1);
 
   // コントローラーのイベントリスナーの追加
-  controller0.addEventListener('selectstart', onSelectStart);
+  controller0.addEventListener('selectstart', onSelectStart_0);
   controller0.addEventListener('selectend', onSelectEnd);
-  controller1.addEventListener('selectstart', onSelectStart);
+  controller1.addEventListener('selectstart', onSelectStart_1);
   controller1.addEventListener('selectend', onSelectEnd);
 
   // トリガーを押した時に呼ばれる
-  function onSelectStart(event) {
+  function onSelectStart_0(event) {
+    const controller = event.target;
+    // レイと交差しているシェイプの取得
+    const intersections = getIntersections(controller);
+    // シェイプをコントローラにアタッチし、シェイプを青くする
+    if (intersections.length > 0) {
+      const intersection = intersections[0];
+      const object = intersection.object;
+
+      // 動かす前の座標を保存
+      const originalPosition = { x: object.position.x, y: object.position.y, z: object.position.z };
+
+      // シェイプを青く光らせる
+      object.material.emissive.b = 1;
+
+      // オブジェクトの座標をコントローラーにアタッチ
+      controller.attach(object);
+
+      // コントローラーのユーザーデータに選択されたオブジェクトを保存
+      controller.userData.selected = object;
+
+      // オブジェクトが動かされたときの処理
+      controller.addEventListener('selectend', () => {
+
+        // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
+        //・・・つまりnodePositions配列からコントローラーで選択しているノードを選び出す＝そのために座標が一致しているものを探すってこど？
+        const matchingIndex = nodePositions.findIndex(node => (
+          node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
+        ));
+        if (matchingIndex !== -1) {
+          // オブジェクトの座標を更新
+          nodePositions[matchingIndex] = object.position;
+          // nodePositions[matchingIndex] = object.position.set(0, 0, -10);
+        }
+
+        //ノードとエッジを消す
+        clearScene();
+        //変更されたノードの位置を再描画
+        renderNetwork(networkData, group, camera, renderer, nodePositions);
+
+      });
+    }
+  }
+
+  function onSelectStart_1(event) {
     const controller = event.target;
     // レイと交差しているシェイプの取得
     const intersections = getIntersections(controller);
@@ -185,8 +229,6 @@ function init() {
           // nodePositions[matchingIndex] = object.position;
           nodePositions[matchingIndex] = object.position.set(0, 0, -10);
         }
-
-
 
         //ノードとエッジを消す
         clearScene();
