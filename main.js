@@ -10,11 +10,11 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 const fileName = "bio-CE-CX300.csv";
 
 //データの座標範囲の上限と下限の設定
-let max = 1;
+let max = 2;
 let min = -max;
 
 //削除回数
-let deleteTimes = 2;
+let deleteTimes = 1;
 
 // ノード座標を保持する配列
 let nodePositions = [];
