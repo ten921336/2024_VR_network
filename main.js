@@ -104,9 +104,9 @@ function init() {
 
 
   /* -------------------コントローラー設定 ここから------------------- */
-  function onSelectEnd() {
-    this.userData.isSelecting = false;
-  }
+  // function onSelectEnd() {
+  //   this.userData.isSelecting = false;
+  // }
 
   // コントローラーファクトリーの準備
   const controllerModelFactory = new XRControllerModelFactory();
@@ -287,7 +287,7 @@ function init() {
           // CSVデータを解析してエッジ情報を取得
           networkData = parseCSV(xhr.responseText);
           autoSetting(networkData);
-          generateRandomNodePositions(networkData, nodePositions);
+          generateNodePositions(networkData, nodePositions);
           if (networkData) {
             // ネットワークのノードとエッジを描画
             renderNetwork(networkData, group, camera, renderer, nodePositions);
@@ -301,6 +301,7 @@ function init() {
     };
     xhr.send();
   }
+
 
   /*  CSVデータの解析  */
   function parseCSV(content) {
@@ -328,8 +329,9 @@ function init() {
 
   /* -------------------座標生成 ここから------------------- */
   let radiusP = 50; //球面座標系の半径、原点からの距離
-  let theta = Math.PI; //水平方向の回転。角度はラジアンで指定。
   let phi = Math.PI / 2; //縦方向の回転。角度はラジアンで指定。
+  let theta = Math.PI; //水平方向の回転。角度はラジアンで指定。
+
   let positionC1 = 0;
   let positionC2 = 0;
 
@@ -382,7 +384,7 @@ function init() {
   }
 
   // ランダムな座標を生成して nodePositions 配列に追加する関数
-  function generateRandomNodePositions(edgesData, nodePosition) {
+  function generateNodePositions(edgesData, nodePosition) {
     const uniqueNodes = new Set();
     const nodePositions = new Map();
 
