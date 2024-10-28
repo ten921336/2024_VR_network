@@ -14,7 +14,7 @@ let max = 2;
 let min = -max;
 
 //削除回数
-let deleteTimes = 1;
+let deleteTimes = 5;
 
 // ノード座標を保持する配列
 let nodePositions = [];
