@@ -145,10 +145,14 @@ function init() {
   const controller1 = addController(1);
 
   // コントローラーのイベントリスナーの追加
-  controller0.addEventListener('selectstart', onSelectStart_0);
-  controller0.addEventListener('selectend', onSelectEnd);
+
+  //0のほうが右手
+  controller0.addEventListener('selectstart', onSelectStart_0,);
+  controller0.addEventListener('selectend', onSelectEnd_0);
+
+  //1のほうが左手
   controller1.addEventListener('selectstart', onSelectStart_1);
-  controller1.addEventListener('selectend', onSelectEnd);
+  controller1.addEventListener('selectend', onSelectEnd_1);
 
   // トリガーを押した時に呼ばれる
   function onSelectStart_0(event) {
@@ -237,10 +241,22 @@ function init() {
 
       });
     }
+
+
+
+    //const controller = event.target;
+
+    // シェイプをグループにアタッチし、シェイプの色を戻す
+    if (controller.userData.selected !== undefined) {
+      const object = controller.userData.selected;
+      object.material.emissive.b = 0;
+      group.attach(object);
+      controller.userData.selected = undefined;
+    }
   }
 
   // トリガーを離した時に呼ばれる
-  function onSelectEnd(event) {
+  function onSelectEnd_0(event) {
     const controller = event.target;
 
     // シェイプをグループにアタッチし、シェイプの色を戻す
@@ -250,6 +266,18 @@ function init() {
       group.attach(object);
       controller.userData.selected = undefined;
     }
+  }
+
+  function onSelectEnd_1(event) {
+    // const controller = event.target;
+
+    // // シェイプをグループにアタッチし、シェイプの色を戻す
+    // if (controller.userData.selected !== undefined) {
+    //   const object = controller.userData.selected;
+    //   object.material.emissive.b = 0;
+    //   group.attach(object);
+    //   controller.userData.selected = undefined;
+    // }
   }
 
   // レイと交差しているシェイプの一覧
