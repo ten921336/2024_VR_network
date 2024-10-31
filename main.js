@@ -120,7 +120,7 @@ function init() {
   //const line = new THREE.Line(geometry , material);
   const line = new THREE.Line(geometry);
   line.name = "line";
-  line.scale.z = 5;
+  line.scale.z = 10;
 
   // コントローラーの追加
   function addController(index) {
@@ -220,6 +220,9 @@ function init() {
       // コントローラーのユーザーデータに選択されたオブジェクトを保存
       controller.userData.selected = object;
 
+      // z座標を動的に変化させる
+      object.position.z += 5;
+
       // オブジェクトが動かされたときの処理
       controller.addEventListener('selectend', () => {
 
@@ -229,9 +232,13 @@ function init() {
           node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
         ));
         if (matchingIndex !== -1) {
-          // オブジェクトの座標を更新
-          // nodePositions[matchingIndex] = object.position;
-          nodePositions[matchingIndex] = object.position.set(0, 0, -10);
+
+          // 変更後のobject.positionをnodePositionsに反映
+          nodePositions[matchingIndex] = {
+            x: object.position.x,
+            y: object.position.y,
+            z: object.position.z
+          };
         }
 
         //ノードとエッジを消す
