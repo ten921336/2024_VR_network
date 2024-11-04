@@ -146,11 +146,11 @@ function init() {
 
   // コントローラーのイベントリスナーの追加
 
-  //0のほうが右手
+  //0のほうがGoLive上では右手、実機では左手
   controller0.addEventListener('selectstart', onSelectStart_0,);
   controller0.addEventListener('selectend', onSelectEnd_0);
 
-  //1のほうが左手
+  //1のほうがGoLive上では左手、実機では右手
   controller1.addEventListener('selectstart', onSelectStart_1);
   controller1.addEventListener('selectend', onSelectEnd_1);
 
@@ -227,7 +227,9 @@ function init() {
       controller.addEventListener('selectend', () => {
 
         // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
-        //・・・つまりnodePositions配列からコントローラーで選択しているノードを選び出す＝そのために座標が一致しているものを探すってこど？
+        //    ↓
+        //つまりnodePositions配列からコントローラーで選択しているノードを選び出す
+        //＝そのために座標が一致しているものを探すってことだと思う？
         const matchingIndex = nodePositions.findIndex(node => (
           node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
         ));
@@ -278,13 +280,13 @@ function init() {
   function onSelectEnd_1(event) {
     // const controller = event.target;
 
-    // // シェイプをグループにアタッチし、シェイプの色を戻す
-    // if (controller.userData.selected !== undefined) {
-    //   const object = controller.userData.selected;
-    //   object.material.emissive.b = 0;
-    //   group.attach(object);
-    //   controller.userData.selected = undefined;
-    // }
+    // シェイプをグループにアタッチし、シェイプの色を戻す
+    if (controller.userData.selected !== undefined) {
+      const object = controller.userData.selected;
+      object.material.emissive.b = 0;
+      group.attach(object);
+      controller.userData.selected = undefined;
+    }
   }
 
   // レイと交差しているシェイプの一覧
