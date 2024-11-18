@@ -147,12 +147,28 @@ function init() {
   // コントローラーのイベントリスナーの追加
 
   //0のほうがGoLive上では右手、実機では左手
+  // controller0.addEventListener('selectstart', onSelectStart_0,);
+  // controller0.addEventListener('selectend', onSelectEnd_0);
+  // controller0.addEventListener('squeezestart', onSqueezeStart_0);
+  // controller0.addEventListener('squeezeend', onSqueezeEnd_0);
+
+  // //1のほうがGoLive上では左手、実機では右手
+  // controller1.addEventListener('selectstart', onSelectStart_1);
+  // controller1.addEventListener('selectend', onSelectEnd_1);
+  // controller1.addEventListener('squeezestart', onSqueezeStart_1);
+  // controller1.addEventListener('squeezeend', onSqueezeEnd_1);
+
+  //0のほうがGoLive上では右手、実機では左手
   controller0.addEventListener('selectstart', onSelectStart_0,);
   controller0.addEventListener('selectend', onSelectEnd_0);
+  controller0.addEventListener('squeezestart', onSelectStart_1);
+  controller0.addEventListener('squeezeend', onSelectEnd_1);
 
   //1のほうがGoLive上では左手、実機では右手
-  controller1.addEventListener('selectstart', onSelectStart_1);
-  controller1.addEventListener('selectend', onSelectEnd_1);
+  controller1.addEventListener('selectstart', onSelectStart_0);
+  controller1.addEventListener('selectend', onSelectEnd_0);
+  controller1.addEventListener('squeezestart', onSelectStart_1);
+  controller1.addEventListener('squeezeend', onSelectEnd_1);
 
   // トリガーを押した時に呼ばれる
   function onSelectStart_0(event) {
@@ -220,8 +236,9 @@ function init() {
       // コントローラーのユーザーデータに選択されたオブジェクトを保存
       controller.userData.selected = object;
 
-      // z座標を動的に変化させる
+      // z座標を変化させる
       object.position.z += 5;
+
 
       // オブジェクトが動かされたときの処理
       controller.addEventListener('selectend', () => {
@@ -229,18 +246,31 @@ function init() {
         // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
         //    ↓
         //つまりnodePositions配列からコントローラーで選択しているノードを選び出す
-        //＝そのために座標が一致しているものを探すってことだと思う？
+        //＝そのために座標が一致しているものを探す(推測)
         const matchingIndex = nodePositions.findIndex(node => (
           node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
         ));
         if (matchingIndex !== -1) {
 
           // 変更後のobject.positionをnodePositionsに反映
-          nodePositions[matchingIndex] = {
-            x: object.position.x,
-            y: object.position.y,
-            z: object.position.z
-          };
+          nodePositions[matchingIndex].z = object.position.z;
+
+          // if (edges[matchingIndex].target != null) {
+          //   nodePositions[edges[matchingIndex].target].z = object.position.z;
+          // }
+
+          // if (edges[matchingIndex].source != null) {
+          //   nodePositions[edges[matchingIndex].source].z = object.position.z;
+          // }
+
+          for (let i = 0; i < edges.length; i++) {
+            if (edges[i].source == matchingIndex) {
+              nodePositions[i].z = object.position.z;
+            }
+            if (edges[i].target == matchingIndex) {
+              nodePositions[i].z = object.position.z;
+            }
+          }
         }
 
         //ノードとエッジを消す
@@ -250,7 +280,6 @@ function init() {
 
       });
     }
-
 
 
     //const controller = event.target;
@@ -278,7 +307,7 @@ function init() {
   }
 
   function onSelectEnd_1(event) {
-    // const controller = event.target;
+    const controller = event.target;
 
     // シェイプをグループにアタッチし、シェイプの色を戻す
     if (controller.userData.selected !== undefined) {
@@ -383,11 +412,12 @@ function init() {
     xhr.send();
   }
 
+  const edges = []; //グローバル変数に変更　本来は↓のコメントアウトされているものを使う
 
   /*  CSVデータの解析  */
   function parseCSV(content) {
     const lines = content.split('\n');
-    const edges = [];
+    // const edges = [];　　　ローカルで使うならこれ
 
     // 各行のデータを解析してエッジ情報を構築
     for (const line of lines) {
@@ -443,26 +473,26 @@ function init() {
   }
 
   // 新しい座標を生成する関数
-  function generateNewPosition(index, nodePosition, adjacencyMap) {
-    if (adjacencyMap[index].length <= 1) {
-      const previousNodePosition = index > 0 ? nodePosition[index - 1] : { x: 0, y: 0, z: 0 };
-      // 連結がない場合、ランダムに離す
-      const randomDisplacement = {
-        x: 0,
-        y: 0,
-        z: 0
-      };
+  // function generateNewPosition(index, nodePosition, adjacencyMap) {
+  //   if (adjacencyMap[index].length <= 1) {
+  //     const previousNodePosition = index > 0 ? nodePosition[index - 1] : { x: 0, y: 0, z: 0 };
+  //     // 連結がない場合、ランダムに離す
+  //     const randomDisplacement = {
+  //       x: 0,
+  //       y: 0,
+  //       z: 0
+  //     };
 
-      const newPosition = {
-        x: previousNodePosition.x + randomDisplacement.x,
-        y: previousNodePosition.y + randomDisplacement.y,
-        z: previousNodePosition.z + randomDisplacement.z
-      };
-      // nodePositions 配列の選択されたノードの位置も更新
-      nodePositions[index] = newPosition;
-    }
+  //     const newPosition = {
+  //       x: previousNodePosition.x + randomDisplacement.x,
+  //       y: previousNodePosition.y + randomDisplacement.y,
+  //       z: previousNodePosition.z + randomDisplacement.z
+  //     };
+  //     // nodePositions 配列の選択されたノードの位置も更新
+  //     nodePositions[index] = newPosition;
+  //   }
 
-  }
+  // }
 
   // 座標を生成して nodePositions 配列に追加する関数
   function generateNodePositions(edgesData, nodePosition) {
