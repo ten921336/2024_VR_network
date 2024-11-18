@@ -74,7 +74,7 @@ function init() {
   // カメラの初期位置を設定
   camera.position.z = 10;
 
-  // カメラ用コンテナを作成(3Dのカメラ？)
+  // カメラ用コンテナを作成
   const cameraContainer = new THREE.Object3D();
   cameraContainer.add(camera);
   scene.add(cameraContainer);
@@ -159,19 +159,19 @@ function init() {
   // controller1.addEventListener('squeezeend', onSqueezeEnd_1);
 
   //0のほうがGoLive上では右手、実機では左手
-  controller0.addEventListener('selectstart', onSelectStart_0,);
-  controller0.addEventListener('selectend', onSelectEnd_0);
-  controller0.addEventListener('squeezestart', onSelectStart_1);
-  controller0.addEventListener('squeezeend', onSelectEnd_1);
+  controller0.addEventListener('selectstart', onSelectStart,);
+  controller0.addEventListener('selectend', onSelectEnd);
+  controller0.addEventListener('squeezestart', onSqueezeStart);
+  controller0.addEventListener('squeezeend', onSqueezeEnd);
 
   //1のほうがGoLive上では左手、実機では右手
-  controller1.addEventListener('selectstart', onSelectStart_0);
-  controller1.addEventListener('selectend', onSelectEnd_0);
-  controller1.addEventListener('squeezestart', onSelectStart_1);
-  controller1.addEventListener('squeezeend', onSelectEnd_1);
+  controller1.addEventListener('selectstart', onSelectStart,);
+  controller1.addEventListener('selectend', onSelectEnd);
+  controller1.addEventListener('squeezestart', onSqueezeStart);
+  controller1.addEventListener('squeezeend', onSqueezeEnd);
 
   // トリガーを押した時に呼ばれる
-  function onSelectStart_0(event) {
+  function onSelectStart(event) {
     const controller = event.target;
     // レイと交差しているシェイプの取得
     const intersections = getIntersections(controller);
@@ -193,29 +193,29 @@ function init() {
       controller.userData.selected = object;
 
       // オブジェクトが動かされたときの処理
-      controller.addEventListener('selectend', () => {
+      // controller.addEventListener('selectend', () => {
 
-        // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
-        //・・・つまりnodePositions配列からコントローラーで選択しているノードを選び出す＝そのために座標が一致しているものを探すってこど？
-        const matchingIndex = nodePositions.findIndex(node => (
-          node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
-        ));
-        if (matchingIndex !== -1) {
-          // オブジェクトの座標を更新
-          nodePositions[matchingIndex] = object.position;
-          // nodePositions[matchingIndex] = object.position.set(0, 0, -10);
-        }
+      // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
+      //・・・つまりnodePositions配列からコントローラーで選択しているノードを選び出す＝そのために座標が一致しているものを探すってこど？
+      const matchingIndex = nodePositions.findIndex(node => (
+        node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
+      ));
+      if (matchingIndex !== -1) {
+        // オブジェクトの座標を更新
+        nodePositions[matchingIndex] = object.position;
+        // nodePositions[matchingIndex] = object.position.set(0, 0, -10);
+      }
 
-        //ノードとエッジを消す
-        clearScene();
-        //変更されたノードの位置を再描画
-        renderNetwork(networkData, group, camera, renderer, nodePositions);
+      //ノードとエッジを消す
+      clearScene();
+      //変更されたノードの位置を再描画
+      renderNetwork(networkData, group, camera, renderer, nodePositions);
 
-      });
+      // });
     }
   }
 
-  function onSelectStart_1(event) {
+  function onSqueezeStart(event) {
     const controller = event.target;
     // レイと交差しているシェイプの取得
     const intersections = getIntersections(controller);
@@ -241,60 +241,67 @@ function init() {
 
 
       // オブジェクトが動かされたときの処理
-      controller.addEventListener('selectend', () => {
+      // controller.addEventListener('selectend', () => {
 
-        // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
-        //    ↓
-        //つまりnodePositions配列からコントローラーで選択しているノードを選び出す
-        //＝そのために座標が一致しているものを探す(推測)
-        const matchingIndex = nodePositions.findIndex(node => (
-          node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
-        ));
-        if (matchingIndex !== -1) {
+      // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
+      //    ↓
+      //つまりnodePositions配列からコントローラーで選択しているノードを選び出す
+      //＝そのために座標が一致しているものを探す(推測)
+      const matchingIndex = nodePositions.findIndex(node => (
+        node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
+      ));
+      if (matchingIndex !== -1) {
 
-          // 変更後のobject.positionをnodePositionsに反映
-          nodePositions[matchingIndex].z = object.position.z;
+        // 変更後のobject.positionをnodePositionsに反映
+        nodePositions[matchingIndex].z = object.position.z;
 
-          // if (edges[matchingIndex].target != null) {
-          //   nodePositions[edges[matchingIndex].target].z = object.position.z;
-          // }
+        // if (edges[matchingIndex].target != null) {
+        //   nodePositions[edges[matchingIndex].target].z = object.position.z;
+        // }
 
-          // if (edges[matchingIndex].source != null) {
-          //   nodePositions[edges[matchingIndex].source].z = object.position.z;
-          // }
+        // if (edges[matchingIndex].source != null) {
+        //   nodePositions[edges[matchingIndex].source].z = object.position.z;
+        // }
 
-          for (let i = 0; i < edges.length; i++) {
-            if (edges[i].source == matchingIndex) {
-              nodePositions[i].z = object.position.z;
-            }
-            if (edges[i].target == matchingIndex) {
-              nodePositions[i].z = object.position.z;
-            }
+        for (let i = 0; i < edges.length; i++) {
+          if (edges[i].source == matchingIndex) {
+            nodePositions[i].z = object.position.z;
+          }
+          if (edges[i].target == matchingIndex) {
+            nodePositions[i].z = object.position.z;
           }
         }
+      }
 
-        //ノードとエッジを消す
-        clearScene();
-        //変更されたノードの位置を再描画
-        renderNetwork(networkData, group, camera, renderer, nodePositions);
+      //ノードとエッジを消す
+      clearScene();
+      //変更されたノードの位置を再描画
+      renderNetwork(networkData, group, camera, renderer, nodePositions);
 
-      });
+      // });
+      // シェイプをグループにアタッチし、シェイプの色を戻す
+      if (controller.userData.selected !== undefined) {
+        const object = controller.userData.selected;
+        object.material.emissive.b = 0;
+        group.attach(object);
+        controller.userData.selected = undefined;
+      }
     }
 
 
     //const controller = event.target;
 
     // シェイプをグループにアタッチし、シェイプの色を戻す
-    if (controller.userData.selected !== undefined) {
-      const object = controller.userData.selected;
-      object.material.emissive.b = 0;
-      group.attach(object);
-      controller.userData.selected = undefined;
-    }
+    // if (controller.userData.selected !== undefined) {
+    //   const object = controller.userData.selected;
+    //   object.material.emissive.b = 0;
+    //   group.attach(object);
+    //   controller.userData.selected = undefined;
+    // }
   }
 
   // トリガーを離した時に呼ばれる
-  function onSelectEnd_0(event) {
+  function onSelectEnd(event) {
     const controller = event.target;
 
     // シェイプをグループにアタッチし、シェイプの色を戻す
@@ -306,16 +313,16 @@ function init() {
     }
   }
 
-  function onSelectEnd_1(event) {
-    const controller = event.target;
+  function onSqueezeEnd(event) {
+    // const controller = event.target;
 
-    // シェイプをグループにアタッチし、シェイプの色を戻す
-    if (controller.userData.selected !== undefined) {
-      const object = controller.userData.selected;
-      object.material.emissive.b = 0;
-      group.attach(object);
-      controller.userData.selected = undefined;
-    }
+    // // シェイプをグループにアタッチし、シェイプの色を戻す
+    // if (controller.userData.selected !== undefined) {
+    //   const object = controller.userData.selected;
+    //   object.material.emissive.b = 0;
+    //   group.attach(object);
+    //   controller.userData.selected = undefined;
+    // }
   }
 
   // レイと交差しているシェイプの一覧
@@ -412,7 +419,7 @@ function init() {
     xhr.send();
   }
 
-  const edges = []; //グローバル変数に変更　本来は↓のコメントアウトされているものを使う
+  var edges = []; //グローバル変数に変更　本来は↓のコメントアウトされているものを使う
 
   /*  CSVデータの解析  */
   function parseCSV(content) {
@@ -712,7 +719,7 @@ function init() {
   /* -------------------ノード、エッジ削除 ここから------------------- */
   function clearScene() {
     // シーン内のすべての子要素（オブジェクト）を削除
-    //1回で全削除されないため(deleteTimes)回繰り返し
+    //1回で全削除されないため(deleteTimes)回繰り返し　⇛　なんで？？？
     for (let i = 0; i < deleteTimes; i++) {
       // シーンにあるMesh、Lineをクリア
       scene.children.forEach((child) => {
@@ -764,7 +771,7 @@ function init() {
   /* -------------------自動設定 ここまで------------------- */
 
 
-  // 毎フレーム時に実行されるループイベント
+  // フレーム毎に実行されるループイベント
   function tick() {
     cleanIntersected();
     intersectObjects(controller0);
@@ -772,9 +779,6 @@ function init() {
 
     handleController(controller0);
     handleController(controller1);
-
-    // レンダリング
-    renderer.render(scene, camera);
   }
 
   // レンダリングループ
