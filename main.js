@@ -9,6 +9,9 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 //ファイル名宣言
 const fileName = "bio-CE-CX300.csv";
 
+//スクイーズボタンで手前に移動する距離の大きさ
+var movePositionZ = 10;
+
 //削除回数
 let deleteTimes = 15;
 
@@ -33,7 +36,7 @@ function init() {
   const scene = new THREE.Scene();
 
   //　背景の色
-  scene.background = new THREE.Color(0x000000);
+  scene.background = new THREE.Color(0x000050);
 
   // グループの準備
   const group = new THREE.Group();
@@ -192,7 +195,7 @@ function init() {
     // 隣接ノードの座標を変更
     neighbors.forEach(neighbor => {
       if (nodePositions[neighbor]) {
-        nodePositions[neighbor].x += 5;
+        nodePositions[neighbor].z += movePositionZ;
       } else {
         console.warn(`ノード ${neighbor} の座標情報が存在しません。`);
       }
@@ -215,13 +218,13 @@ function init() {
       object.material.emissive.b = 1;
 
       // オブジェクトの座標をコントローラーにアタッチ
-      controller.attach(object);
+      // controller.attach(object);
 
       // コントローラーのユーザーデータに選択されたオブジェクトを保存
-      controller.userData.selected = object;
+      // controller.userData.selected = object;
 
-      // z座標を変化させる
-      object.position.z += 5;
+      // // z座標を変化させる
+      // object.position.z += 5;
 
 
       // オブジェクトが動かされたときの処理
@@ -232,7 +235,7 @@ function init() {
       if (matchingIndex !== -1) {
 
         // 変更後のobject.positionをnodePositionsに反映
-        nodePositions[matchingIndex].z = object.position.z;
+        nodePositions[matchingIndex].z += movePositionZ;
 
         // if (edges[matchingIndex].target != null) {
         //   nodePositions[edges[matchingIndex].target].z = object.position.z;
@@ -271,6 +274,7 @@ function init() {
         group.attach(object);
         controller.userData.selected = undefined;
       }
+
     }
 
 
