@@ -9,10 +9,6 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 //ファイル名宣言
 const fileName = "bio-CE-CX300.csv";
 
-//データの座標範囲の上限と下限の設定
-let max = 2;
-let min = -max;
-
 //削除回数
 let deleteTimes = 15;
 
@@ -20,21 +16,8 @@ let deleteTimes = 15;
 let nodePositions = [];
 let networkData;
 
-//ノードの離す大きさ
-const coefficient = 20;
-
 //半径
-let radius = 0.2;
-
-//範囲
-const autoRangeSetting = true; //true:データの数に応じて範囲を設定　false:グローバル変数を参照
-
-//削除回数
-const autodeleteSetting = true; //true:データの数に応じて削除回数を設定　false:グローバル変数を参照
-
-//半径
-const autoRadius = true; //true:データの数に応じてnodeの半径を設定　false:グローバル変数を参照
-
+let radius = 1.5;
 
 
 function init() {
@@ -50,7 +33,7 @@ function init() {
   const scene = new THREE.Scene();
 
   //　背景の色
-  scene.background = new THREE.Color(0x00e6e6);
+  scene.background = new THREE.Color(0x000000);
 
   // グループの準備
   const group = new THREE.Group();
@@ -104,9 +87,6 @@ function init() {
 
 
   /* -------------------コントローラー設定 ここから------------------- */
-  // function onSelectEnd() {
-  //   this.userData.isSelecting = false;
-  // }
 
   // コントローラーファクトリーの準備
   const controllerModelFactory = new XRControllerModelFactory();
@@ -147,18 +127,6 @@ function init() {
   // コントローラーのイベントリスナーの追加
 
   //0のほうがGoLive上では右手、実機では左手
-  // controller0.addEventListener('selectstart', onSelectStart_0,);
-  // controller0.addEventListener('selectend', onSelectEnd_0);
-  // controller0.addEventListener('squeezestart', onSqueezeStart_0);
-  // controller0.addEventListener('squeezeend', onSqueezeEnd_0);
-
-  // //1のほうがGoLive上では左手、実機では右手
-  // controller1.addEventListener('selectstart', onSelectStart_1);
-  // controller1.addEventListener('selectend', onSelectEnd_1);
-  // controller1.addEventListener('squeezestart', onSqueezeStart_1);
-  // controller1.addEventListener('squeezeend', onSqueezeEnd_1);
-
-  //0のほうがGoLive上では右手、実機では左手
   controller0.addEventListener('selectstart', onSelectStart,);
   controller0.addEventListener('selectend', onSelectEnd);
   controller0.addEventListener('squeezestart', onSqueezeStart);
@@ -193,8 +161,6 @@ function init() {
       controller.userData.selected = object;
 
       // オブジェクトが動かされたときの処理
-      // controller.addEventListener('selectend', () => {
-
       // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
       //・・・つまりnodePositions配列からコントローラーで選択しているノードを選び出す＝そのために座標が一致しているものを探すってこど？
       const matchingIndex = nodePositions.findIndex(node => (
@@ -210,9 +176,27 @@ function init() {
       clearScene();
       //変更されたノードの位置を再描画
       renderNetwork(networkData, group, camera, renderer, nodePositions);
-
-      // });
     }
+  }
+
+  //選択したノードと隣接しているノードの移動処理
+  function updateCoordinatesForNeighbors(selectedNode, adjacencyMap, nodePositions) {
+    // 選択したノードの隣接ノードを取得
+    const neighbors = adjacencyMap[selectedNode];
+
+    if (!neighbors) {
+      console.warn("選択したノードが見つからないか、隣接ノードが存在しません。");
+      return;
+    }
+
+    // 隣接ノードの座標を変更
+    neighbors.forEach(neighbor => {
+      if (nodePositions[neighbor]) {
+        nodePositions[neighbor].x += 5;
+      } else {
+        console.warn(`ノード ${neighbor} の座標情報が存在しません。`);
+      }
+    });
   }
 
   function onSqueezeStart(event) {
@@ -241,12 +225,7 @@ function init() {
 
 
       // オブジェクトが動かされたときの処理
-      // controller.addEventListener('selectend', () => {
-
       // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
-      //    ↓
-      //つまりnodePositions配列からコントローラーで選択しているノードを選び出す
-      //＝そのために座標が一致しているものを探す(推測)
       const matchingIndex = nodePositions.findIndex(node => (
         node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
       ));
@@ -263,14 +242,21 @@ function init() {
         //   nodePositions[edges[matchingIndex].source].z = object.position.z;
         // }
 
-        for (let i = 0; i < edges.length; i++) {
-          if (edges[i].source == matchingIndex) {
-            nodePositions[i].z = object.position.z;
-          }
-          if (edges[i].target == matchingIndex) {
-            nodePositions[i].z = object.position.z;
-          }
-        }
+        // for (let i = 0; i < edges.length; i++) {
+        //   if (edges[i].source == matchingIndex) {
+        //     nodePositions[edges[i].source].z = object.position.z;
+        //   }
+
+        //   if (edges[i].target == matchingIndex) {
+        //     nodePositions[edges[i].target].z = object.position.z;
+        //   }
+        // }
+
+        var adjM = createAdjacencyMap(networkData);
+        updateCoordinatesForNeighbors(matchingIndex, adjM, nodePositions);
+
+
+
       }
 
       //ノードとエッジを消す
@@ -278,7 +264,6 @@ function init() {
       //変更されたノードの位置を再描画
       renderNetwork(networkData, group, camera, renderer, nodePositions);
 
-      // });
       // シェイプをグループにアタッチし、シェイプの色を戻す
       if (controller.userData.selected !== undefined) {
         const object = controller.userData.selected;
@@ -289,7 +274,7 @@ function init() {
     }
 
 
-    //const controller = event.target;
+
 
     // シェイプをグループにアタッチし、シェイプの色を戻す
     // if (controller.userData.selected !== undefined) {
@@ -403,7 +388,6 @@ function init() {
         if (xhr.status == 200) {
           // CSVデータを解析してエッジ情報を取得
           networkData = parseCSV(xhr.responseText);
-          autoSetting(networkData);
           generateNodePositions(networkData, nodePositions);
           if (networkData) {
             // ネットワークのノードとエッジを描画
@@ -424,7 +408,7 @@ function init() {
   /*  CSVデータの解析  */
   function parseCSV(content) {
     const lines = content.split('\n');
-    // const edges = [];　　　ローカルで使うならこれ
+
 
     // 各行のデータを解析してエッジ情報を構築
     for (const line of lines) {
@@ -555,7 +539,7 @@ function init() {
   /* -------------------ネットワーク構造図の生成 ここから------------------- */
   function renderNetwork(edgesData, group, camera, renderer, nodePositions) {
     // ノードを作成
-    const adjacencyMap = createAdjacencyMap(edgesData);
+    var adjacencyMap = createAdjacencyMap(edgesData);
     //console.log(adjacencyMap);
     Object.values(nodePositions).forEach((position, index) => {
       //ノードのジオメトリを作成
@@ -740,35 +724,6 @@ function init() {
     renderer.render(scene, camera);
   }
   /* -------------------ノード、エッジ削除 ここまで------------------- */
-
-
-
-  /* -------------------自動設定 ここから------------------- */
-  function autoSetting(edgesData) {
-    //範囲
-    if (autoRangeSetting) {
-      max = edgesData.length / 4;
-      min = -max
-    }
-
-    //削除回数
-    // if (autodeleteSetting) {
-    //   deleteTimes = edgesData.length / 2;
-    // }
-
-    //半径
-    if (autoRadius) {
-      if (edgesData.length <= 10) {
-        radius = 0.2;
-      } else if (edgesData.length <= 100) {
-        radius = 0.4;
-      } else {
-        radius = 0.4 * edgesData.length / 100;
-      }
-    }
-    //console.log('Max:', max, ' , Min:', min, ' , DeleteTimes:', deleteTimes, ' , DeleteTimes:', radius);
-  }
-  /* -------------------自動設定 ここまで------------------- */
 
 
   // フレーム毎に実行されるループイベント
