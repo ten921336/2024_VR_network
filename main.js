@@ -6,21 +6,105 @@ import WebXRPolyfill from "webxr-polyfill";
 import { XRControllerModelFactory } from 'https://unpkg.com/three@0.150.1/examples/jsm/webxr/XRControllerModelFactory.js';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
+
+/* --------------- テキスト表示 ここから --------------- */
+
+function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 5, height = 5) {
+  // 1. Canvas要素を作成
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  canvas.width = 512; // 解像度を設定
+  canvas.height = 512;
+
+  // テキストを描画する関数
+  function drawText(text) {
+    context.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
+
+    // 背景を黒の半透明に設定
+    context.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 黒の半透明
+    context.fillRect(0, 0, canvas.width, canvas.height); // 背景を塗りつぶす
+
+    // テキストのスタイルを設定して描画
+    context.fillStyle = 'white'; // テキスト色を白に設定
+    context.font = '48px Arial'; // フォントスタイル
+    context.textAlign = 'center'; // 中央揃え
+    context.textBaseline = 'middle'; // 中央基準
+    context.fillText(text, canvas.width / 2, canvas.height / 2); // テキストを描画
+  }
+
+  // 初期テキストを描画
+  drawText(initialText);
+
+  // 2. CanvasをThree.jsのTextureに変換
+  const texture = new THREE.CanvasTexture(canvas);
+
+  // 3. 板のジオメトリとマテリアルを作成
+  const geometry = new THREE.PlaneGeometry(width, height);
+  const material = new THREE.MeshBasicMaterial({
+    map: texture, // Canvasの内容をマテリアルとして使用
+    transparent: true, // 透明を有効化
+  });
+
+  const plane = new THREE.Mesh(geometry, material);
+  plane.position.set(x, y, z); // 板の位置を設定
+  scene.add(plane); // シーンに追加
+
+  // 動的に文字列を変更する関数を返す
+  return (newText) => {
+    drawText(newText); // 新しいテキストをCanvasに描画
+    texture.needsUpdate = true; // テクスチャを更新
+  };
+}
+
+
+// / テキストを描画するためのキャンバスを作成
+// const canvas3 = document.createElement('canvas');
+// const context3 = canvas3.getContext('2d');
+// context3.font = '100px Arial';
+// context3.fillStyle = 'white';
+// context3.fillText("配列 : ", 0, 150); // 高さのテキスト
+
+// // CanvasTextureを作成し、Spriteを作成（最初に一度だけ）
+// const texture3 = new THREE.CanvasTexture(canvas3);
+// const spriteMaterial3 = new THREE.SpriteMaterial({
+//   map: texture3,
+//   side: THREE.DoubleSide,  // 両面描画
+//   depthTest: false,         // 深度テストを無効に
+//   depthWrite: false         // 深度書き込みを無効に
+// });
+// const sprite3 = new THREE.Sprite(spriteMaterial3);
+// sprite3.position.set(0, 1, -8.5);
+
+// function addTransparentPlane(scene, x = 0, y = 0, z = 0, width = 5, height = 5, color = 0x0000ff, opacity = 0.5) {
+//   // 板のジオメトリ（幅と高さを指定）
+//   const geometry = new THREE.PlaneGeometry(width, height);
+//   // 半透明なマテリアルを作成
+//   const material = new THREE.MeshBasicMaterial({
+//     color: color, // 板の色
+//     transparent: true, // 透明設定を有効化
+//     opacity: opacity, // 半透明度
+//   });
+//   // 板のメッシュを作成
+//   const plane = new THREE.Mesh(geometry, material);
+//   // 板の位置を設定
+//   plane.position.set(x, y, z);
+//   // シーンに板を追加
+//   scene.add(plane);
+// }
+
+/* --------------- テキスト表示 ここまで --------------- */
+
+
 //ファイル名宣言
-const fileName = "bio-CE-CX300.csv";
-
+// const fileName = "bio-CE-CX300.csv";
+const fileName = "cora.csv";
 //スクイーズボタンで手前に移動する距離の大きさ
-var movePositionZ = 10;
-
+var movePositionZ = 30;
 //削除回数
 let deleteTimes = 15;
-
 // ノード座標を保持する配列
 let nodePositions = [];
 let networkData;
-
-//半径
-let radius = 1.5;
 
 
 function init() {
@@ -36,7 +120,8 @@ function init() {
   const scene = new THREE.Scene();
 
   //　背景の色
-  scene.background = new THREE.Color(0x000050);
+  scene.background = new THREE.Color(0xffffff);
+  // scene.background = new THREE.Color(0x000050);
 
   // グループの準備
   const group = new THREE.Group();
@@ -81,7 +166,7 @@ function init() {
 
     //光源を作成
     const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(0, 3, 0);  //  three.jsは座標系が左右(x)、上下(y)、前後(z)
+    light.position.set(0, 0, 1);  //  three.jsは座標系が左右(x)、上下(y)、前後(z)
     light.castShadow = true;
     scene.add(light);
   }
@@ -183,24 +268,27 @@ function init() {
   }
 
   //選択したノードと隣接しているノードの移動処理
-  function updateCoordinatesForNeighbors(selectedNode, adjacencyMap, nodePositions) {
-    // 選択したノードの隣接ノードを取得
-    const neighbors = adjacencyMap[selectedNode];
+  // function updateCoordinatesForNeighbors(selectedNode, adjacencyMap, nodePositions) {
+  //   // 選択したノードの隣接ノードを取得
+  //   const neighbors = adjacencyMap[selectedNode];
 
-    if (!neighbors) {
-      console.warn("選択したノードが見つからないか、隣接ノードが存在しません。");
-      return;
-    }
+  //   if (!neighbors) {
+  //     console.warn("選択したノードが見つからないか、隣接ノードが存在しません。");
+  //     return;
+  //   }
 
-    // 隣接ノードの座標を変更
-    neighbors.forEach(neighbor => {
-      if (nodePositions[neighbor]) {
-        nodePositions[neighbor].z += movePositionZ;
-      } else {
-        console.warn(`ノード ${neighbor} の座標情報が存在しません。`);
-      }
-    });
-  }
+  //   // 隣接ノードの座標を変更
+  //   neighbors.forEach(neighbor => {
+  //     if (nodePositions[neighbor]) {
+  //       nodePositions[neighbor].z += movePositionZ;
+  //     } else {
+  //       console.warn(`ノード ${neighbor} の座標情報が存在しません。`);
+  //     }
+  //   });
+  // }
+
+  var frontX = -4;
+  var frontZ = 0;
 
   function onSqueezeStart(event) {
     const controller = event.target;
@@ -217,49 +305,37 @@ function init() {
       // シェイプを青く光らせる
       object.material.emissive.b = 1;
 
-      // オブジェクトの座標をコントローラーにアタッチ
-      // controller.attach(object);
+      if (object.position.z >= -20) {
+        const matchingIndex = nodePositions.findIndex(node => (
+          node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
+        ));
+        if (matchingIndex !== -1) {
 
-      // コントローラーのユーザーデータに選択されたオブジェクトを保存
-      // controller.userData.selected = object;
+        }
 
-      // // z座標を変化させる
-      // object.position.z += 5;
+        toggleEdgesVisibility(false);
 
+      } else {
 
-      // オブジェクトが動かされたときの処理
-      // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
-      const matchingIndex = nodePositions.findIndex(node => (
-        node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
-      ));
-      if (matchingIndex !== -1) {
+        // オブジェクトが動かされたときの処理
+        // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
+        const matchingIndex = nodePositions.findIndex(node => (
+          node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
+        ));
+        if (matchingIndex !== -1) {
 
-        // 変更後のobject.positionをnodePositionsに反映
-        nodePositions[matchingIndex].z += movePositionZ;
+          nodePositions[matchingIndex].x = frontX;
+          nodePositions[matchingIndex].y = 0;
+          nodePositions[matchingIndex].z = -5 - frontZ;
+        }
 
-        // if (edges[matchingIndex].target != null) {
-        //   nodePositions[edges[matchingIndex].target].z = object.position.z;
-        // }
+        frontX += 2;
 
-        // if (edges[matchingIndex].source != null) {
-        //   nodePositions[edges[matchingIndex].source].z = object.position.z;
-        // }
-
-        // for (let i = 0; i < edges.length; i++) {
-        //   if (edges[i].source == matchingIndex) {
-        //     nodePositions[edges[i].source].z = object.position.z;
-        //   }
-
-        //   if (edges[i].target == matchingIndex) {
-        //     nodePositions[edges[i].target].z = object.position.z;
-        //   }
-        // }
-
-        var adjM = createAdjacencyMap(networkData);
-        updateCoordinatesForNeighbors(matchingIndex, adjM, nodePositions);
-
-
-
+        if (frontX > 4) {
+          frontX = -4;
+          frontZ += 2;
+        }
+        toggleEdgesVisibility(false);
       }
 
       //ノードとエッジを消す
@@ -270,23 +346,11 @@ function init() {
       // シェイプをグループにアタッチし、シェイプの色を戻す
       if (controller.userData.selected !== undefined) {
         const object = controller.userData.selected;
-        object.material.emissive.b = 0;
+        // object.material.emissive.b = 0;//
         group.attach(object);
         controller.userData.selected = undefined;
       }
-
     }
-
-
-
-
-    // シェイプをグループにアタッチし、シェイプの色を戻す
-    // if (controller.userData.selected !== undefined) {
-    //   const object = controller.userData.selected;
-    //   object.material.emissive.b = 0;
-    //   group.attach(object);
-    //   controller.userData.selected = undefined;
-    // }
   }
 
   // トリガーを離した時に呼ばれる
@@ -303,15 +367,7 @@ function init() {
   }
 
   function onSqueezeEnd(event) {
-    // const controller = event.target;
 
-    // // シェイプをグループにアタッチし、シェイプの色を戻す
-    // if (controller.userData.selected !== undefined) {
-    //   const object = controller.userData.selected;
-    //   object.material.emissive.b = 0;
-    //   group.attach(object);
-    //   controller.userData.selected = undefined;
-    // }
   }
 
   // レイと交差しているシェイプの一覧
@@ -377,7 +433,6 @@ function init() {
   /* -------------------コントローラー設定 ここまで------------------- */
 
 
-
   /* -------------------ファイル読み込み ここから------------------- */
   loadCSVAndInit(fileName);
 
@@ -409,32 +464,29 @@ function init() {
 
   var edges = []; //グローバル変数に変更　本来は↓のコメントアウトされているものを使う
 
-  /*  CSVデータの解析  */
   function parseCSV(content) {
     const lines = content.split('\n');
-
-
-    // 各行のデータを解析してエッジ情報を構築
     for (const line of lines) {
-      const [source, target, weight] = line.trim().split(',');
-
-      if (source && target && weight) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.includes(',')) {
+        console.warn("無効な行をスキップ:", line); // 無効行を無視
+        continue;
+      }
+      const [source, target] = trimmed.split(',');
+      if (source && target) {
         edges.push({
           source: parseInt(source),
-          target: parseInt(target),
-          weight: parseFloat(weight)
+          target: parseInt(target)
         });
       }
     }
-    // エッジ情報が存在する場合、その情報を返す
     return edges.length > 0 ? edges : null;
   }
   /* -------------------ファイル読み込み ここまで------------------- */
 
 
-
-  /* -------------------座標生成 ここから------------------- */
-  let radiusP = 50; //球面座標系の半径、原点からの距離
+  /* -------------------ノードの座標生成 ここから------------------- */
+  let radiusP = 40; //球面座標系の半径、原点からの距離
   let phi = Math.PI / 2; //縦方向の回転。角度はラジアンで指定。
   let theta = Math.PI; //水平方向の回転。角度はラジアンで指定。
 
@@ -446,48 +498,24 @@ function init() {
 
     const position = {
       x: radiusP * Math.sin(phi) * Math.cos(theta),
-      y: radiusP * Math.cos(phi),
+      y: radiusP * Math.cos(phi) - 5,
       z: radiusP * Math.sin(phi) * Math.sin(theta)
     };
-
-    positionC1 += 1;
-
+    positionC1 += 0.3;
     if (positionC1 >= 30) {
       positionC1 = 0;
       positionC2 += 1;
     }
-
     theta = Math.PI + (Math.PI / 30) * positionC1;
-    phi = Math.PI / 2 - (Math.PI / 30) * positionC2;  //30は横の個数　(csvの個数)/(縦の段数)で良くなるのでは？
+    phi = Math.PI / 2 - (Math.PI / 100) * (positionC2 + 1);  //30は横の個数
+
 
     // 生成したノードの座標を配列に追加
     nodePositions.push(position);
-
     // 生成したノードの座標を返す
     return position;
   }
 
-  // 新しい座標を生成する関数
-  // function generateNewPosition(index, nodePosition, adjacencyMap) {
-  //   if (adjacencyMap[index].length <= 1) {
-  //     const previousNodePosition = index > 0 ? nodePosition[index - 1] : { x: 0, y: 0, z: 0 };
-  //     // 連結がない場合、ランダムに離す
-  //     const randomDisplacement = {
-  //       x: 0,
-  //       y: 0,
-  //       z: 0
-  //     };
-
-  //     const newPosition = {
-  //       x: previousNodePosition.x + randomDisplacement.x,
-  //       y: previousNodePosition.y + randomDisplacement.y,
-  //       z: previousNodePosition.z + randomDisplacement.z
-  //     };
-  //     // nodePositions 配列の選択されたノードの位置も更新
-  //     nodePositions[index] = newPosition;
-  //   }
-
-  // }
 
   // 座標を生成して nodePositions 配列に追加する関数
   function generateNodePositions(edgesData, nodePosition) {
@@ -506,18 +534,13 @@ function init() {
       nodePositions.set(node, position);
     });
 
-    //葉ノードの位置を修正
-    // const adjacencyMap = createAdjacencyMap(edgesData);
-    // Object.values(nodePosition).forEach((position, index) => {
-    //   generateNewPosition(index, nodePosition, adjacencyMap);
-    // });
   }
   /* -------------------座標生成 ここまで------------------- */
 
 
 
   /* -------------------エッジ生成 ここから------------------- */
-  function createEdge(sourcePosition, targetPosition, weight) {
+  function createEdge(sourcePosition, targetPosition) {
     // ここにエッジの描画処理を追加
     const geometry = new THREE.BufferGeometry().setFromPoints([sourcePosition, targetPosition]);
     const material = new THREE.LineBasicMaterial({ color: 0xffffff });
@@ -532,18 +555,170 @@ function init() {
       const targetPosition = nodePositions[edge.target];
 
       if (sourcePosition && targetPosition) {
-        createEdge(sourcePosition, targetPosition, edge.weight);
+        createEdge(sourcePosition, targetPosition);
       }
+    });
+  }
+
+  function toggleEdgesVisibility(visible) {
+    edges.forEach(edge => {
+      edge.visible = visible; // visible プロパティを設定
     });
   }
   /* -------------------エッジ生成 ここまで------------------- */
 
 
+  /* -------------------グリッドの生成 ここから------------------- */
 
-  /* -------------------ネットワーク構造図の生成 ここから------------------- */
+  const size = 500; // グリッド全体のサイズ
+  const divisions = 20; // マス目の数
+  const mainColor = 0x000000; // メインラインの色
+  const subColor = 0x555555;  // 補助ライン
+
+  const gridHelper = new THREE.GridHelper(size, divisions, mainColor, subColor);
+  gridHelper.position.set(0, -30, 0);
+  scene.add(gridHelper);
+  const gridHelper2 = new THREE.GridHelper(size, divisions, mainColor, subColor);
+  gridHelper2.position.set(0, 200, 0);
+  scene.add(gridHelper2);
+  /* -------------------グリッドの生成 ここまで------------------- */
+
+  /* -------------------垂直線の生成 ここから------------------- */
+  function createVerticalLine(x, z, color) {
+    const points = [
+      new THREE.Vector3(x, -30, z),    // 始点
+      new THREE.Vector3(x, 200, z) // 終点
+    ];
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({ color: color });
+    return new THREE.Line(geometry, material);
+  }
+
+  // 4本の垂直線を作成
+  const line1 = createVerticalLine(-250, -250, 0x555555);
+  const line2 = createVerticalLine(250, -250, 0x555555);
+  const line3 = createVerticalLine(-250, 250, 0x555555);
+  const line4 = createVerticalLine(250, 250, 0x555555);
+
+  // シーンに追加
+  scene.add(line1);
+  scene.add(line2);
+  scene.add(line3);
+  scene.add(line4);
+  /* -------------------垂直線の生成 ここまで------------------- */
+
+  /* -------------------本棚の生成 ここから------------------- */
+
+  // カーブした棚板を作成する関数
+  function createCurvedShelf(radius, width, depth, yPosition, segments) {
+    const shelfGroup = new THREE.Group(); // 棚板グループを作成
+
+    const angleStep = Math.PI / segments; // セグメントごとの角度
+    for (let i = 0; i <= segments; i++) {
+      const angle = -Math.PI / 2 + i * angleStep - Math.PI / 2; // 半円分の範囲 (-90度から90度)
+
+      // 棚板の各セクションの位置
+      const x = radius * Math.cos(angle);
+      const z = radius * Math.sin(angle);
+
+      // 各セクションの棚板を作成
+      const geometry = new THREE.BoxGeometry(width, 0.5, depth);
+      const material = new THREE.MeshStandardMaterial({ color: 0x8b5533 }); // 木材色
+      const section = new THREE.Mesh(geometry, material);
+
+      section.position.set(x, yPosition, z); // 配置
+      section.rotation.y = -angle; // 回転でカーブに沿わせる
+      shelfGroup.add(section); // グループに追加
+    }
+
+    return shelfGroup;
+  }
+
+  // 支柱を作成する関数
+  function createColumn(height, radius, positionX, positionZ) {
+    const geometry = new THREE.CylinderGeometry(0.3, 0.3, height, 32); // 支柱のサイズ
+    const material = new THREE.MeshStandardMaterial({ color: 0x8b5533 }); // 木材色
+    const column = new THREE.Mesh(geometry, material);
+    column.position.set(positionX, height / 2, positionZ + 1); // 配置
+    return column;
+  }
+
+  // 本棚全体を作成する関数
+  function createBookshelf(radius, width, depth, height, levels, segments) {
+    const bookshelf = new THREE.Group(); // 本棚全体のグループ
+
+    // 各棚板を配置
+    for (let i = 0; i < levels; i++) {
+      const yPosition = i * (height / (levels - 1)); // 高さを均等に配置
+      const shelf = createCurvedShelf(radius, width, depth, yPosition, segments);
+      bookshelf.add(shelf);
+    }
+
+    // 支柱を追加
+    const column1 = createColumn(height, 0.3, radius, 0); // 右側
+    const column2 = createColumn(height, 0.3, -radius, 0); // 左側
+    bookshelf.add(column1);
+    bookshelf.add(column2);
+
+    return bookshelf;
+  }
+
+  // 本棚を作成してシーンに追加
+  const bookshelf = createBookshelf(40, 3, 5, 40, 28, 100); // 半径, 幅, 奥行き, 高さ, 段, 分割
+  scene.add(bookshelf);
+  bookshelf.position.set(0, -5, 0);
+
+
+  /* -------------------本棚の生成 ここまで------------------- */
+
+  /* -------------------机の生成 ここから------------------- */
+
+  function createDesk() {
+    const deskGroup = new THREE.Group(); // 机全体をまとめるグループ
+
+    // 天板
+    const deskTopGeometry = new THREE.BoxGeometry(20, 0.5, 7); // 幅、高さ、奥行
+    const deskTopMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 }); // 木材っぽい色
+    const deskTop = new THREE.Mesh(deskTopGeometry, deskTopMaterial);
+    deskTop.position.set(0, -1, -8); // 天板の高さを設定
+    deskTop.castShadow = true; // 影を落とす
+    deskTop.receiveShadow = true; // 影を受け取る
+    deskGroup.add(deskTop);
+
+    // 脚の作成
+    const legGeometry = new THREE.BoxGeometry(0.5, 4, 0.5); // 幅、高さ、奥行
+    const legMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
+
+    // 脚の位置を設定
+    const legPositions = [
+      { x: -8, y: -3, z: -10 }, // 左前
+      { x: -8, y: -3, z: -6 },  // 左後
+      { x: 8, y: -3, z: -10 },  // 右前
+      { x: 8, y: -3, z: -6 },   // 右後
+    ];
+
+    legPositions.forEach((pos) => {
+      const leg = new THREE.Mesh(legGeometry, legMaterial);
+      leg.position.set(pos.x, pos.y, pos.z);
+      leg.castShadow = true; // 影を落とす
+      leg.receiveShadow = true; // 影を受け取る
+      deskGroup.add(leg);
+    });
+
+    // グループ全体をシーンに追加
+    scene.add(deskGroup);
+  }
+
+  createDesk();
+  // scene.add(sprite3);
+
+  /* -------------------机の生成 ここまで------------------- */
+
+  /* -------------------ノード（本）の生成 ここから------------------- */
   function renderNetwork(edgesData, group, camera, renderer, nodePositions) {
     // ノードを作成
     var adjacencyMap = createAdjacencyMap(edgesData);
+    var nodeCount = 0;
     //console.log(adjacencyMap);
     Object.values(nodePositions).forEach((position, index) => {
       //ノードのジオメトリを作成
@@ -551,26 +726,17 @@ function init() {
       //ノードのマテリアルを作成
       let material;
 
-      // 2つ以上のノードがつながっているノード
-      if (adjacencyMap[index].length >= 2) {
-        // 2通常のノード
-        geometry = new THREE.BoxGeometry(radius * 2, radius * 2, radius * 2);
-        material = new THREE.MeshLambertMaterial({ color: 0x7fbfff });
-      } else {
-        // 1つしかノードがつながっていない葉ノード
-        if (adjacencyMap[adjacencyMap[index]].length >= 2) {
-          //1つ前のノードが2つ以上のノードがつながっているノード
-          geometry = new THREE.SphereGeometry(radius, 32, 32);
-          material = new THREE.MeshLambertMaterial({ color: 0xffc0cb });
-        } else {
-          //1つ前のノードが自分自身としかつながっていないノード
-          geometry = new THREE.TetrahedronGeometry();
-          material = new THREE.MeshLambertMaterial({ color: 0xa4eba4 });
-        }
-      }
+      geometry = new THREE.BoxGeometry(0.2, 1.5, 0.5);
+      material = new THREE.MeshLambertMaterial({ color: 0x822025 });
+
 
       const node = new THREE.Mesh(geometry, material);
       node.position.set(position.x, position.y, position.z);
+      node.rotation.y = (Math.PI / 2) + (Math.PI / 100) * nodeCount;
+      nodeCount += 1;
+      if (nodeCount > 100) {
+        nodeCount = 0;
+      }
       group.add(node);
     });
 
@@ -579,7 +745,7 @@ function init() {
 
 
   }
-  /* -------------------ネットワーク構造図の生成 ここまで------------------- */
+  /* -------------------ノード（本）の生成 ここまで------------------- */
 
 
 
@@ -587,13 +753,20 @@ function init() {
   function createAdjacencyMap(edgesData) {
     const adjacencyMap = new Array(nodePositions.length).fill(null).map(() => []);
     edgesData.forEach(edge => {
+      // console.log(adjacencyMap[edge.source], adjacencyMap[edge.target]);
+
+      if (!adjacencyMap[edge.source]) {
+        adjacencyMap[edge.source] = [];
+      }
       adjacencyMap[edge.source].push(edge.target);
+      if (!adjacencyMap[edge.target]) {
+        adjacencyMap[edge.target] = [];
+      }
       adjacencyMap[edge.target].push(edge.source);
     });
     return adjacencyMap;
   }
   /* ------------------- 隣接リストを作成 ここまで------------------- */
-
 
 
 
@@ -604,104 +777,6 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
   /* ------------------- リサイズ処理 ここまで------------------- */
-
-
-
-  /* -------------------座標の更新 ここから------------------- */
-  // すべてのノードの位置を更新する関数
-  // function updateAllNode() {
-  //   nodePositions.forEach((position, index) => {
-  //     const newPosition = {
-  //       x: Math.random(),
-  //       y: Math.random(),
-  //       z: Math.random()
-  //     };
-
-  //     const node = scene.children.find((child) => child instanceof THREE.Mesh && child.position.equals(position));
-  //     if (node) {
-  //       node.position.set(newPosition.x, newPosition.y, newPosition.z);
-  //     }
-
-  //     nodePositions[index] = newPosition;
-  //   });
-
-  //   //葉ノードの位置を修正
-  //   const adjacencyMap = createAdjacencyMap(networkData);
-  //   Object.values(nodePositions).forEach((position, index) => {
-  //     generateNewPosition(index, nodePositions, adjacencyMap);
-  //   });
-
-  //   //ノードとエッジを消す
-  //   clearScene();
-  //   //変更されたノードの位置を再描画
-  //   renderNetwork(networkData, group, camera, renderer, nodePositions);
-
-  //   // レンダリング
-  //   renderer.render(scene, camera);
-  // }
-
-  // ランダムなノードの位置を更新して描画する関数
-  // function updateRandomNode() {
-  //   // nodePositions 配列が空でないことを確認
-  //   if (nodePositions.length > 0) {
-  //     // ランダムなインデックスを選択
-  //     const randomIndex = Math.floor(Math.random() * nodePositions.length);
-
-  //     // 選択されたノードの位置を更新
-  //     const newPosition = {
-  //       x: Math.random(),
-  //       y: Math.random(),
-  //       z: Math.random()
-  //     };
-
-  //     // 選択されたノードを取得し、位置を更新
-  //     const selectedNode = scene.children.find((child) => child instanceof THREE.Mesh &&
-  //       child.position.equals(nodePositions[randomIndex]));
-
-  //     if (selectedNode) {
-  //       selectedNode.position.set(newPosition.x, newPosition.y, newPosition.z);
-  //     }
-
-  //     // nodePositions 配列の選択されたノードの位置も更新
-  //     nodePositions[randomIndex] = newPosition;
-
-  //     //ノードとエッジを消す
-  //     clearScene();
-  //     //変更されたノードの位置を再描画
-  //     renderNetwork(networkData, group, camera, renderer, nodePositions);
-
-  //     // レンダリング
-  //     // renderer.render(scene, camera);
-  //   }
-  // }
-
-  // function updateAllRandomNode() {
-  //   nodePositions.forEach((position, index) => {
-  //     const newPosition = {
-  //       x: Math.random(),
-  //       y: Math.random(),
-  //       z: Math.random()
-  //     };
-
-  //     const node = scene.children.find((child) => child instanceof THREE.Mesh && child.position.equals(position));
-  //     if (node) {
-  //       node.position.set(newPosition.x, newPosition.y, newPosition.z);
-  //     }
-
-  //     nodePositions[index] = newPosition;
-  //   });
-
-  //   //ノードとエッジを消す
-  //   clearScene();
-  //   //変更されたノードの位置を再描画
-  //   renderNetwork(networkData, group, camera, renderer, nodePositions);
-
-  //   // レンダリング
-  //   renderer.render(scene, camera);
-  // }
-
-  /* -------------------座標の更新 ここまで------------------- */
-
 
 
   /* -------------------ノード、エッジ削除 ここから------------------- */
@@ -725,6 +800,12 @@ function init() {
     }
 
     // 再描画
+    scene.add(gridHelper);
+    scene.add(gridHelper2);
+    scene.add(line1);
+    scene.add(line2);
+    scene.add(line3);
+    scene.add(line4);
     renderer.render(scene, camera);
   }
   /* -------------------ノード、エッジ削除 ここまで------------------- */
@@ -746,6 +827,9 @@ function init() {
     tick();
   });
 
+  toggleEdgesVisibility(false);
   // リサイズ処理
+  createTextPlane(scene);
   window.addEventListener("resize", onResize);
+
 }
