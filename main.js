@@ -9,7 +9,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 
 /* --------------- テキスト表示 ここから --------------- */
-function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 5, height = 5) {
+function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 8, height = 8) {
   // 1. Canvas要素を作成
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
@@ -21,12 +21,12 @@ function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 5, he
     context.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
 
     // 背景を黒の半透明に設定
-    context.fillStyle = 'rgba(0, 0, 0, 0.3)'; // 黒の半透明
+    context.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 黒の半透明
     context.fillRect(0, 0, canvas.width, canvas.height); // 背景を塗りつぶす
 
     // テキストのスタイルを設定して描画
     context.fillStyle = 'white'; // テキスト色を白に設定
-    context.font = '50px Arial'; // フォントスタイル
+    context.font = '25px Arial'; // フォントスタイル
     context.textAlign = 'center'; // 中央揃え
     context.textBaseline = 'middle'; // 中央基準
     context.fillText(text, canvas.width / 2, canvas.height / 2); // テキストを描画
@@ -61,9 +61,7 @@ function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 5, he
 
 /* --------------- 変数の用意 ここから --------------- */
 
-//ファイル名宣言
-const fileName = "cora.csv";
-
+var str = '';
 //削除回数
 let deleteTimes = 15;
 
@@ -71,12 +69,13 @@ let deleteTimes = 15;
 let networkData;
 
 //ノードの名前、座標などの情報を保持する配列 
-let nodeName = [];  //文献の名前
+var nodeName = [];  //文献の名前
+let nodeCrass = [];  //文献のクラスカテゴリ
 let nodePositions = []; // ノード座標
-let nodeInfo = [];  //上２つの変数をまとめて格納する
+let nodeInfo = [];  //上3つの変数をまとめて格納する
 
 //nodeNameとnodePositionを格納
-nodeInfo.push(nodeName, nodePositions);
+nodeInfo.push(nodeName, nodePositions, nodeCrass);
 
 //表示するテキストを変更するための変数
 var updateText;
@@ -133,7 +132,95 @@ function init() {
   cameraContainer.position.x = 0;
   /* --------------- 基本的な設定 ここまで --------------- */
 
+  /* -------------------ファイル読み込み ここから------------------- */
+  // CSVファイルの読み込みとシーンの初期化
+  //1
+  function loadCSVForFile2(name) {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", name, true);
+    xhr.onreadystatechange = function () {
+      // XMLHttpRequestの状態が変わるたびに呼ばれるコールバック
+      if (xhr.readyState == 4) {
+        // リクエストが成功した場合
+        if (xhr.status == 200) {
+          // CSVデータを解析して1列目と2列目を取得
+          parseCSVForFile2(xhr.responseText);
+          console.log(nodeName);  // 1列目のデータ
+          console.log(nodeCrass); // 2列目のデータ
+        } else {
+          console.error('Error loading the CSV file');
+        }
+      }
+    };
+    xhr.send();
+  }
 
+  function parseCSVForFile2(content) {
+    const lines = content.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.includes(',')) {
+        console.warn("無効な行をスキップ:", line); // 無効行を無視
+        continue;
+      }
+      const [column1, column2] = trimmed.split(',');
+      if (column1 && column2) {
+        nodeName.push(column1.trim());  // 1列目をnodeNameに代入
+        nodeCrass.push(column2.trim()); // 2列目をnodeCrassに代入
+      }
+    }
+  }
+
+  loadCSVForFile2("coraContent.csv");
+  loadCSVAndInit("cora.csv");
+  //2
+
+  function loadCSVAndInit(name) {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", name, true);
+    xhr.onreadystatechange = function () {
+      // XMLHttpRequestの状態が変わるたびに呼ばれるコールバック
+      if (xhr.readyState == 4) {
+        // リクエストが成功した場合
+        if (xhr.status == 200) {
+          // CSVデータを解析してエッジ情報を取得
+          networkData = parseCSV(xhr.responseText);
+          generateNodePositions(networkData, nodePositions);
+          if (networkData) {
+            // ネットワークのノードとエッジを描画
+            renderNetwork(networkData, group, camera, renderer, nodePositions);
+          } else {
+            console.error('Invalid CSV file format');
+          }
+        } else {
+          console.error('Error loading the CSV file');
+        }
+      }
+    };
+    xhr.send();
+  }
+
+  var edges = [];
+
+  function parseCSV(content) {
+    const lines = content.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.includes(',')) {
+        console.warn("無効な行をスキップ:", line); // 無効行を無視
+        continue;
+      }
+      const [source, target] = trimmed.split(',');
+      if (source && target) {
+        edges.push({
+          source: parseInt(source),
+          target: parseInt(target)
+        });
+      }
+    }
+    return edges.length > 0 ? edges : null;
+  }
+  /* -------------------ファイル読み込み ここまで------------------- */
 
   /* --------------- 光源設定 ここから --------------- */
   // 光源を作成
@@ -175,7 +262,7 @@ function init() {
   const lineColor = new THREE.LineBasicMaterial({ color: 0xff2020 });
   const line = new THREE.Line(geometry, lineColor);
   line.name = "line";
-  line.scale.z = 30;
+  line.scale.z = 50;
 
   // コントローラーの追加
   function addController(index) {
@@ -227,7 +314,11 @@ function init() {
       const originalPosition = { x: object.position.x, y: object.position.y, z: object.position.z };
 
       // シェイプを青く光らせる
-      object.material.emissive.b = 1;
+      // node.material.forEach((material) => {
+      //   if (material.emissive) {
+      //     material.emissive.b = 1; // 青く発光させる
+      //   }
+      // });
 
       // オブジェクトの座標をコントローラーにアタッチ
       controller.attach(object);
@@ -275,6 +366,7 @@ function init() {
 
   var frontX = -4;
   var frontZ = 0;
+  var lengthNum = 0;
 
   //スクイーズボタンを押したときの処理
   function onSqueezeStart(event) {
@@ -290,7 +382,11 @@ function init() {
       const originalPosition = { x: object.position.x, y: object.position.y, z: object.position.z };
 
       // シェイプを青く光らせる
-      object.material.emissive.b = 1;
+      // node.material.forEach((material) => {
+      //   if (material.emissive) {
+      //     material.emissive.b = 1; // 青く発光させる
+      //   }
+      // });
 
       if (object.position.z >= -20) {
         const matchingIndex = nodePositions.findIndex(node => (
@@ -307,10 +403,10 @@ function init() {
           node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
         ));
         if (matchingIndex !== -1) {
-
           nodePositions[matchingIndex].x = frontX;
           nodePositions[matchingIndex].y = 0;
           nodePositions[matchingIndex].z = -6 - frontZ;
+          lengthNum = matchingIndex;
         }
 
         frontX += 2;
@@ -321,6 +417,7 @@ function init() {
         }
       }
 
+
       //ノードとエッジを消す
       clearScene();
       //変更されたノードの位置を再描画
@@ -329,7 +426,11 @@ function init() {
       // シェイプをグループにアタッチし、シェイプの色を戻す
       if (controller.userData.selected !== undefined) {
         const object = controller.userData.selected;
-        // object.material.emissive.b = 0;//
+        // node.material.forEach((material) => {
+        //   if (material.emissive) {
+        //     material.emissive.b = 0; // 青く発光させる
+        //   }
+        // });
         group.attach(object);
         controller.userData.selected = undefined;
       }
@@ -343,7 +444,11 @@ function init() {
     // シェイプをグループにアタッチし、シェイプの色を戻す
     if (controller.userData.selected !== undefined) {
       const object = controller.userData.selected;
-      object.material.emissive.b = 0;
+      // node.material.forEach((material) => {
+      //   if (material.emissive) {
+      //     material.emissive.b = 0; // 青く発光させる
+      //   }
+      // });
       group.attach(object);
       controller.userData.selected = undefined;
     }
@@ -352,7 +457,9 @@ function init() {
 
   //スクイーズボタンを話したときの処理
   function onSqueezeEnd(event) {
-    updateText('node : ' + nodeInfo[0][3]);//二個目の0を変数iとかに変える。変数iはi番目のノードで有ることを示す
+    // updateText('crass : ' + nodeInfo[2][3]);
+    updateText('crass : ' + nodeInfo[2][lengthNum]);
+    lengthNum = 0;
     toggleEdgesVisibility(true);
   }
 
@@ -364,7 +471,11 @@ function init() {
   function cleanIntersected() {
     while (intersected.length) {
       const object = intersected.pop();
-      object.material.emissive.r = 0;
+      // node.material.forEach((material) => {
+      //   if (material.emissive) {
+      //     material.emissive.r = 0; // 青く発光させる
+      //   }
+      // });
     }
   }
 
@@ -383,14 +494,18 @@ function init() {
       // 交差時は赤くする
       const intersection = intersections[0];
       const object = intersection.object;
-      object.material.emissive.r = 1;
+      // node.material.forEach((material) => {
+      //   if (material.emissive) {
+      //     material.emissive.r = 1; // 発光させる
+      //   }
+      // });
       intersected.push(object);
 
       // 交差時は光線の長さをシェイプまでにする
       line.scale.z = intersection.distance;
     } else {
       // 光線の長さを固定長に戻す
-      line.scale.z = 1000;
+      line.scale.z = 500;
     }
   }
 
@@ -416,60 +531,8 @@ function init() {
       console.log("コントローラーボタンが押された");
     }
   }
-
   /* -------------------コントローラー設定 ここまで------------------- */
 
-
-  /* -------------------ファイル読み込み ここから------------------- */
-  loadCSVAndInit(fileName);
-
-  // CSVファイルの読み込みとシーンの初期化
-  function loadCSVAndInit(name) {
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", name, true);
-    xhr.onreadystatechange = function () {
-      // XMLHttpRequestの状態が変わるたびに呼ばれるコールバック
-      if (xhr.readyState == 4) {
-        // リクエストが成功した場合
-        if (xhr.status == 200) {
-          // CSVデータを解析してエッジ情報を取得
-          networkData = parseCSV(xhr.responseText);
-          generateNodePositions(networkData, nodePositions);
-          if (networkData) {
-            // ネットワークのノードとエッジを描画
-            renderNetwork(networkData, group, camera, renderer, nodePositions);
-          } else {
-            console.error('Invalid CSV file format');
-          }
-        } else {
-          console.error('Error loading the CSV file');
-        }
-      }
-    };
-    xhr.send();
-  }
-
-  var edges = []; //グローバル変数に変更　本来は↓のコメントアウトされているものを使う
-
-  function parseCSV(content) {
-    const lines = content.split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || !trimmed.includes(',')) {
-        console.warn("無効な行をスキップ:", line); // 無効行を無視
-        continue;
-      }
-      const [source, target] = trimmed.split(',');
-      if (source && target) {
-        edges.push({
-          source: parseInt(source),
-          target: parseInt(target)
-        });
-      }
-    }
-    return edges.length > 0 ? edges : null;
-  }
-  /* -------------------ファイル読み込み ここまで------------------- */
 
 
   /* -------------------ノードの座標生成 ここから------------------- */
@@ -579,8 +642,9 @@ function init() {
     edgeObjects.push(edge);
   }
 
-  // 複数のエッジを描画する関数
-  function renderEdges(edgesData, scene, nodePositions) {
+  // 複数のエッジを描画する関数   再調整
+  function renderEdges(edgesData, nodeName, nodePositions) {
+    let cou = 0;
     edgesData.forEach(edge => {
       const sourcePosition = nodePositions[edge.source];
       const targetPosition = nodePositions[edge.target];
@@ -779,37 +843,98 @@ function init() {
 
 
   /* -------------------ノード（本）の生成 ここから------------------- */
+
+  // function renderNetwork(edgesData, group, camera, renderer, nodePositions) {
+  //   // ノードを作成
+  //   var adjacencyMap = createAdjacencyMap(edgesData);
+  //   var nodeCount = 0;
+  //   var nodeNum = 0;
+  //   //console.log(adjacencyMap);
+  //   Object.values(nodePositions).forEach((position, index) => {
+  //     //ノードのジオメトリを作成
+  //     let geometry;
+  //     //ノードのマテリアルを作成
+  //     let material;
+
+  //     geometry = new THREE.BoxGeometry(0.4, 1.5, 1);
+  //     material = new THREE.MeshLambertMaterial({ color: 0x104010 });
+
+
+  //     const node = new THREE.Mesh(geometry, material);
+  //     node.position.set(position.x, position.y, position.z);
+  //     //node.rotation.y = (Math.PI / 2) + (Math.PI / 100) * nodeCount;
+  //     nodeCount, nodeNum += 1;
+  //     nodeName.push(nodeNum);
+  //     if (nodeCount > 100) {
+  //       nodeCount = 0;
+  //     }
+  //     group.add(node);
+  //   });
+
+  //   // エッジを作成
+  //   renderEdges(edgesData, scene, nodePositions);
+  //   toggleEdgesVisibility(false); // 非表示
+
+  // }
+
   function renderNetwork(edgesData, group, camera, renderer, nodePositions) {
     // ノードを作成
     var adjacencyMap = createAdjacencyMap(edgesData);
     var nodeCount = 0;
     var nodeNum = 0;
-    //console.log(adjacencyMap);
+
     Object.values(nodePositions).forEach((position, index) => {
-      //ノードのジオメトリを作成
-      let geometry;
-      //ノードのマテリアルを作成
-      let material;
+      // ノードのジオメトリを作成
+      let geometry = new THREE.BoxGeometry(0.4, 1.5, 1);
 
-      geometry = new THREE.BoxGeometry(0.4, 1.5, 1);
-      material = new THREE.MeshLambertMaterial({ color: 0x104010 });
+      // 文字列を描画するためのCanvasTextureを作成
+      function createTextTexture(text, width = 256, height = 256) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
 
+        // 背景と文字のスタイル設定
+        context.fillStyle = 'green'; // 背景色
+        context.fillRect(0, 0, width, height);
 
-      const node = new THREE.Mesh(geometry, material);
+        context.font = '30px Arial'; // フォントスタイル
+        context.fillStyle = 'black'; // 文字色
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(text, width / 2, height / 2);
+
+        // テクスチャとして返す
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      // ノードのマテリアルを作成
+      let nodeNameText = nodeName[nodeNum]; // nodeName 配列の値を使用
+      let textTexture = createTextTexture("ID:" + nodeNameText);
+      const materials = [
+        new THREE.MeshLambertMaterial({ map: textTexture }), // -X面
+        new THREE.MeshLambertMaterial({ map: textTexture }), // +X面
+        new THREE.MeshLambertMaterial({ color: 0xaaaaaa }), // -Y面
+        new THREE.MeshLambertMaterial({ color: 0xaaaaaa }), // +Y面
+        new THREE.MeshLambertMaterial({ map: textTexture }), // -Z面
+        new THREE.MeshLambertMaterial({ color: 0xaaaaaa }), // +Z面（文字を描画）
+      ];
+
+      const node = new THREE.Mesh(geometry, materials);
       node.position.set(position.x, position.y, position.z);
-      //node.rotation.y = (Math.PI / 2) + (Math.PI / 100) * nodeCount;
-      nodeCount, nodeNum += 1;
-      nodeName.push(nodeNum);
+
+      nodeCount += 1;
+      nodeNum += 1;
       if (nodeCount > 100) {
         nodeCount = 0;
       }
+
       group.add(node);
     });
 
     // エッジを作成
-    renderEdges(edgesData, scene, nodePositions);
+    renderEdges(edgesData, nodeName, nodePositions);
     toggleEdgesVisibility(false); // 非表示
-
   }
   /* -------------------ノード（本）の生成 ここまで------------------- */
 
@@ -874,7 +999,7 @@ function init() {
     scene.add(line3);
     scene.add(line4);
 
-    updateText = createTextPlane(scene, 'Initial Text', 0, 1, -10, 5, 5);
+    updateText = createTextPlane(scene, 'init text', 0, 1, -10, 8, 8);
     renderer.render(scene, camera);
   }
   /* -------------------ノード、エッジ削除 ここまで------------------- */
