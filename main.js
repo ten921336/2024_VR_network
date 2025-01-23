@@ -7,8 +7,8 @@ import { XRControllerModelFactory } from 'https://unpkg.com/three@0.150.1/exampl
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 
-/* --------------- テキスト表示 ここから --------------- */
 
+/* --------------- テキスト表示 ここから --------------- */
 function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 5, height = 5) {
   // 1. Canvas要素を作成
   const canvas = document.createElement('canvas');
@@ -21,12 +21,12 @@ function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 5, he
     context.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
 
     // 背景を黒の半透明に設定
-    context.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 黒の半透明
+    context.fillStyle = 'rgba(0, 0, 0, 0.3)'; // 黒の半透明
     context.fillRect(0, 0, canvas.width, canvas.height); // 背景を塗りつぶす
 
     // テキストのスタイルを設定して描画
     context.fillStyle = 'white'; // テキスト色を白に設定
-    context.font = '48px Arial'; // フォントスタイル
+    context.font = '50px Arial'; // フォントスタイル
     context.textAlign = 'center'; // 中央揃え
     context.textBaseline = 'middle'; // 中央基準
     context.fillText(text, canvas.width / 2, canvas.height / 2); // テキストを描画
@@ -55,59 +55,40 @@ function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 5, he
     texture.needsUpdate = true; // テクスチャを更新
   };
 }
-
-
-// / テキストを描画するためのキャンバスを作成
-// const canvas3 = document.createElement('canvas');
-// const context3 = canvas3.getContext('2d');
-// context3.font = '100px Arial';
-// context3.fillStyle = 'white';
-// context3.fillText("配列 : ", 0, 150); // 高さのテキスト
-
-// // CanvasTextureを作成し、Spriteを作成（最初に一度だけ）
-// const texture3 = new THREE.CanvasTexture(canvas3);
-// const spriteMaterial3 = new THREE.SpriteMaterial({
-//   map: texture3,
-//   side: THREE.DoubleSide,  // 両面描画
-//   depthTest: false,         // 深度テストを無効に
-//   depthWrite: false         // 深度書き込みを無効に
-// });
-// const sprite3 = new THREE.Sprite(spriteMaterial3);
-// sprite3.position.set(0, 1, -8.5);
-
-// function addTransparentPlane(scene, x = 0, y = 0, z = 0, width = 5, height = 5, color = 0x0000ff, opacity = 0.5) {
-//   // 板のジオメトリ（幅と高さを指定）
-//   const geometry = new THREE.PlaneGeometry(width, height);
-//   // 半透明なマテリアルを作成
-//   const material = new THREE.MeshBasicMaterial({
-//     color: color, // 板の色
-//     transparent: true, // 透明設定を有効化
-//     opacity: opacity, // 半透明度
-//   });
-//   // 板のメッシュを作成
-//   const plane = new THREE.Mesh(geometry, material);
-//   // 板の位置を設定
-//   plane.position.set(x, y, z);
-//   // シーンに板を追加
-//   scene.add(plane);
-// }
-
 /* --------------- テキスト表示 ここまで --------------- */
 
 
+
+/* --------------- 変数の用意 ここから --------------- */
+
 //ファイル名宣言
-// const fileName = "bio-CE-CX300.csv";
 const fileName = "cora.csv";
-//スクイーズボタンで手前に移動する距離の大きさ
-var movePositionZ = 30;
+
 //削除回数
 let deleteTimes = 15;
-// ノード座標を保持する配列
-let nodePositions = [];
+
+//CSVファイルをJavaScriptで扱うために使用する変数
 let networkData;
 
+//ノードの名前、座標などの情報を保持する配列 
+let nodeName = [];  //文献の名前
+let nodePositions = []; // ノード座標
+let nodeInfo = [];  //上２つの変数をまとめて格納する
 
+//nodeNameとnodePositionを格納
+nodeInfo.push(nodeName, nodePositions);
+
+//表示するテキストを変更するための変数
+var updateText;
+/* --------------- 変数の用意 ここまで --------------- */
+
+
+
+
+
+//最初に一回だけ実行される
 function init() {
+
   /* --------------- 基本的な設定 ここから --------------- */
   // WebXRのポリフィルを有効にする
   const polyfill = new WebXRPolyfill();
@@ -150,7 +131,6 @@ function init() {
   cameraContainer.add(camera);
   scene.add(cameraContainer);
   cameraContainer.position.x = 0;
-
   /* --------------- 基本的な設定 ここまで --------------- */
 
 
@@ -161,12 +141,20 @@ function init() {
 
   // 光源を作成する関数
   function createLights(scene) {
+
+    // ambientLightは環境光。シーンを均一に照らす。影はできない。
     const ambientLight = new THREE.AmbientLight(0x333333);
     scene.add(ambientLight);
 
+    // DirectionalLightは並行光。太陽の光のように方向が決まった光。影ができる。
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1); // 光源の方向
+    directionalLight.castShadow = true; // 影を有効化
+    scene.add(directionalLight);
+
     //光源を作成
     const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(0, 0, 1);  //  three.jsは座標系が左右(x)、上下(y)、前後(z)
+    light.position.set(0, 0, 1);
     light.castShadow = true;
     scene.add(light);
   }
@@ -184,11 +172,10 @@ function init() {
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(0, 0, -1),
   ]);
-  //const material= new THREE.LineBasicMaterial({color: 0xff0000});
-  //const line = new THREE.Line(geometry , material);
-  const line = new THREE.Line(geometry);
+  const lineColor = new THREE.LineBasicMaterial({ color: 0xff2020 });
+  const line = new THREE.Line(geometry, lineColor);
   line.name = "line";
-  line.scale.z = 10;
+  line.scale.z = 30;
 
   // コントローラーの追加
   function addController(index) {
@@ -214,19 +201,19 @@ function init() {
 
   // コントローラーのイベントリスナーの追加
 
-  //0のほうがGoLive上では右手、実機では左手
+  //左手のコントローラーのボタン処理準備　(WebXRを使用してPCのブラウザ上で操作するときは左右逆になる)
   controller0.addEventListener('selectstart', onSelectStart,);
   controller0.addEventListener('selectend', onSelectEnd);
   controller0.addEventListener('squeezestart', onSqueezeStart);
   controller0.addEventListener('squeezeend', onSqueezeEnd);
 
-  //1のほうがGoLive上では左手、実機では右手
+  //右手のコントローラーのボタン処理準備
   controller1.addEventListener('selectstart', onSelectStart,);
   controller1.addEventListener('selectend', onSelectEnd);
   controller1.addEventListener('squeezestart', onSqueezeStart);
   controller1.addEventListener('squeezeend', onSqueezeEnd);
 
-  // トリガーを押した時に呼ばれる
+  // トリガーボタンを押した時の処理
   function onSelectStart(event) {
     const controller = event.target;
     // レイと交差しているシェイプの取得
@@ -250,7 +237,6 @@ function init() {
 
       // オブジェクトが動かされたときの処理
       // nodePositionsに動く前の座標と同じものがあれば、動いた後の座標に変更する
-      //・・・つまりnodePositions配列からコントローラーで選択しているノードを選び出す＝そのために座標が一致しているものを探すってこど？
       const matchingIndex = nodePositions.findIndex(node => (
         node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
       ));
@@ -290,6 +276,7 @@ function init() {
   var frontX = -4;
   var frontZ = 0;
 
+  //スクイーズボタンを押したときの処理
   function onSqueezeStart(event) {
     const controller = event.target;
     // レイと交差しているシェイプの取得
@@ -312,9 +299,6 @@ function init() {
         if (matchingIndex !== -1) {
 
         }
-
-        toggleEdgesVisibility(false);
-
       } else {
 
         // オブジェクトが動かされたときの処理
@@ -326,7 +310,7 @@ function init() {
 
           nodePositions[matchingIndex].x = frontX;
           nodePositions[matchingIndex].y = 0;
-          nodePositions[matchingIndex].z = -5 - frontZ;
+          nodePositions[matchingIndex].z = -6 - frontZ;
         }
 
         frontX += 2;
@@ -335,7 +319,6 @@ function init() {
           frontX = -4;
           frontZ += 2;
         }
-        toggleEdgesVisibility(false);
       }
 
       //ノードとエッジを消す
@@ -353,7 +336,7 @@ function init() {
     }
   }
 
-  // トリガーを離した時に呼ばれる
+  // トリガーボタンを離した時の処理
   function onSelectEnd(event) {
     const controller = event.target;
 
@@ -366,9 +349,13 @@ function init() {
     }
   }
 
-  function onSqueezeEnd(event) {
 
+  //スクイーズボタンを話したときの処理
+  function onSqueezeEnd(event) {
+    updateText('node : ' + nodeInfo[0][3]);//二個目の0を変数iとかに変える。変数iはi番目のノードで有ることを示す
+    toggleEdgesVisibility(true);
   }
+
 
   // レイと交差しているシェイプの一覧
   const intersected = [];
@@ -486,36 +473,67 @@ function init() {
 
 
   /* -------------------ノードの座標生成 ここから------------------- */
-  let radiusP = 40; //球面座標系の半径、原点からの距離
-  let phi = Math.PI / 2; //縦方向の回転。角度はラジアンで指定。
-  let theta = Math.PI; //水平方向の回転。角度はラジアンで指定。
+  // let radiusP = 40; //球面座標系の半径、原点からの距離
+  // let phi = Math.PI / 2; //縦方向の回転。角度はラジアンで指定。
+  // let theta = Math.PI; //水平方向の回転。角度はラジアンで指定。
 
-  let positionC1 = 0;
-  let positionC2 = 0;
+  // let positionC1 = 0;
+  // let positionC2 = 0;
 
+  // function createPositions() {
+
+  //   //座標を生成
+  //   const position = {
+  //     x: radiusP * Math.sin(phi) * Math.cos(theta),
+  //     y: radiusP * Math.cos(phi) - 5,
+  //     z: radiusP * Math.sin(phi) * Math.sin(theta)
+  //   };
+  //   positionC1 += 0.3;
+  //   if (positionC1 >= 30) {
+  //     positionC1 = 0;
+  //     positionC2 += 1;
+  //   }
+  //   theta = Math.PI + (Math.PI / 30) * positionC1;
+  //   phi = Math.PI / 2 - (Math.PI / 100) * (positionC2 + 1);  //30は横の個数
+
+
+  //   // 生成したノードの座標を配列に追加
+  //   nodePositions.push(position);
+  //   // 生成したノードの座標を返す
+  //   return position;
+  // }
+  var countH = 0;
+  var yPosi = 0;
+  let i = 0;
   function createPositions() {
-    //座標を生成
+    const radius = 40;
+
+    const angleStep = Math.PI / 100; // セグメントごとの角度
+    const angle = -Math.PI / 2 + i * angleStep - Math.PI / 2; // 半円分の範囲 (-90度から90度)
+    const xPosi = radius * Math.cos(angle);
+    const zPosi = radius * Math.sin(angle);
+
+    i += 1;
+    if (i > 100) {
+      i = 0;
+    }
+    countH += 1;
+    if (countH > 100) {
+      countH = 0;
+      yPosi += 2;
+    }
 
     const position = {
-      x: radiusP * Math.sin(phi) * Math.cos(theta),
-      y: radiusP * Math.cos(phi) - 5,
-      z: radiusP * Math.sin(phi) * Math.sin(theta)
+      x: xPosi,
+      y: yPosi - 4,
+      z: zPosi
     };
-    positionC1 += 0.3;
-    if (positionC1 >= 30) {
-      positionC1 = 0;
-      positionC2 += 1;
-    }
-    theta = Math.PI + (Math.PI / 30) * positionC1;
-    phi = Math.PI / 2 - (Math.PI / 100) * (positionC2 + 1);  //30は横の個数
-
 
     // 生成したノードの座標を配列に追加
     nodePositions.push(position);
     // 生成したノードの座標を返す
     return position;
   }
-
 
   // 座標を生成して nodePositions 配列に追加する関数
   function generateNodePositions(edgesData, nodePosition) {
@@ -540,15 +558,28 @@ function init() {
 
 
   /* -------------------エッジ生成 ここから------------------- */
+
+  // エッジを管理する配列を準備
+  const edgeObjects = [];
+
+  // エッジを作成する関数
   function createEdge(sourcePosition, targetPosition) {
-    // ここにエッジの描画処理を追加
+    // エッジのジオメトリとマテリアルを作成
     const geometry = new THREE.BufferGeometry().setFromPoints([sourcePosition, targetPosition]);
-    const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const material = new THREE.LineBasicMaterial({ color: 0x00bfff });
     const edge = new THREE.Line(geometry, material);
-    edge.castShadow = true; //
+
+    // シャドウや追加設定
+    edge.castShadow = true;
+
+    // シーンに追加
     scene.add(edge);
+
+    // エッジを管理配列に追加
+    edgeObjects.push(edge);
   }
 
+  // 複数のエッジを描画する関数
   function renderEdges(edgesData, scene, nodePositions) {
     edgesData.forEach(edge => {
       const sourcePosition = nodePositions[edge.source];
@@ -560,15 +591,43 @@ function init() {
     });
   }
 
+  // エッジの表示・非表示を切り替える関数
   function toggleEdgesVisibility(visible) {
-    edges.forEach(edge => {
-      edge.visible = visible; // visible プロパティを設定
+    edgeObjects.forEach(edge => {
+      edge.visible = visible; // trueで表示、falseで非表示
     });
   }
+
+  // function createEdge(sourcePosition, targetPosition) {
+  //   // ここにエッジの描画処理を追加
+  //   const geometry = new THREE.BufferGeometry().setFromPoints([sourcePosition, targetPosition]);
+  //   const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+  //   const edge = new THREE.Line(geometry, material);
+  //   edge.castShadow = true; //
+  //   scene.add(edge);
+  // }
+
+  // function renderEdges(edgesData, scene, nodePositions) {
+  //   edgesData.forEach(edge => {
+  //     const sourcePosition = nodePositions[edge.source];
+  //     const targetPosition = nodePositions[edge.target];
+
+  //     if (sourcePosition && targetPosition) {
+  //       createEdge(sourcePosition, targetPosition);
+  //     }
+  //   });
+  // }
+
+  // function toggleEdgesVisibility(visible) {
+  //   edges.forEach(edge => {
+  //     edge.visible = visible; // visible プロパティを設定
+  //   });
+  // }
   /* -------------------エッジ生成 ここまで------------------- */
 
 
-  /* -------------------グリッドの生成 ここから------------------- */
+
+  /* --------------------空間の床・壁・天井の設定 ここから------------------- */
 
   const size = 500; // グリッド全体のサイズ
   const divisions = 20; // マス目の数
@@ -581,9 +640,8 @@ function init() {
   const gridHelper2 = new THREE.GridHelper(size, divisions, mainColor, subColor);
   gridHelper2.position.set(0, 200, 0);
   scene.add(gridHelper2);
-  /* -------------------グリッドの生成 ここまで------------------- */
 
-  /* -------------------垂直線の生成 ここから------------------- */
+  //壁になる垂直線の追加
   function createVerticalLine(x, z, color) {
     const points = [
       new THREE.Vector3(x, -30, z),    // 始点
@@ -605,7 +663,9 @@ function init() {
   scene.add(line2);
   scene.add(line3);
   scene.add(line4);
-  /* -------------------垂直線の生成 ここまで------------------- */
+  /* -------------------空間の床・壁・天井の設定 ここまで------------------- */
+
+
 
   /* -------------------本棚の生成 ここから------------------- */
 
@@ -664,12 +724,14 @@ function init() {
   }
 
   // 本棚を作成してシーンに追加
-  const bookshelf = createBookshelf(40, 3, 5, 40, 28, 100); // 半径, 幅, 奥行き, 高さ, 段, 分割
-  scene.add(bookshelf);
+  const bookshelf = createBookshelf(40, 3, 5, 55, 27, 100); // 半径, 幅, 奥行き, 高さ, 段, 分割
+  //scene.add(bookshelf);
   bookshelf.position.set(0, -5, 0);
 
 
   /* -------------------本棚の生成 ここまで------------------- */
+
+
 
   /* -------------------机の生成 ここから------------------- */
 
@@ -714,11 +776,14 @@ function init() {
 
   /* -------------------机の生成 ここまで------------------- */
 
+
+
   /* -------------------ノード（本）の生成 ここから------------------- */
   function renderNetwork(edgesData, group, camera, renderer, nodePositions) {
     // ノードを作成
     var adjacencyMap = createAdjacencyMap(edgesData);
     var nodeCount = 0;
+    var nodeNum = 0;
     //console.log(adjacencyMap);
     Object.values(nodePositions).forEach((position, index) => {
       //ノードのジオメトリを作成
@@ -726,14 +791,15 @@ function init() {
       //ノードのマテリアルを作成
       let material;
 
-      geometry = new THREE.BoxGeometry(0.2, 1.5, 0.5);
-      material = new THREE.MeshLambertMaterial({ color: 0x822025 });
+      geometry = new THREE.BoxGeometry(0.4, 1.5, 1);
+      material = new THREE.MeshLambertMaterial({ color: 0x104010 });
 
 
       const node = new THREE.Mesh(geometry, material);
       node.position.set(position.x, position.y, position.z);
-      node.rotation.y = (Math.PI / 2) + (Math.PI / 100) * nodeCount;
-      nodeCount += 1;
+      //node.rotation.y = (Math.PI / 2) + (Math.PI / 100) * nodeCount;
+      nodeCount, nodeNum += 1;
+      nodeName.push(nodeNum);
       if (nodeCount > 100) {
         nodeCount = 0;
       }
@@ -742,7 +808,7 @@ function init() {
 
     // エッジを作成
     renderEdges(edgesData, scene, nodePositions);
-
+    toggleEdgesVisibility(false); // 非表示
 
   }
   /* -------------------ノード（本）の生成 ここまで------------------- */
@@ -779,6 +845,7 @@ function init() {
   /* ------------------- リサイズ処理 ここまで------------------- */
 
 
+
   /* -------------------ノード、エッジ削除 ここから------------------- */
   function clearScene() {
     // シーン内のすべての子要素（オブジェクト）を削除
@@ -806,9 +873,13 @@ function init() {
     scene.add(line2);
     scene.add(line3);
     scene.add(line4);
+
+    updateText = createTextPlane(scene, 'Initial Text', 0, 1, -10, 5, 5);
     renderer.render(scene, camera);
   }
   /* -------------------ノード、エッジ削除 ここまで------------------- */
+
+
 
 
   // フレーム毎に実行されるループイベント
@@ -821,15 +892,14 @@ function init() {
     handleController(controller1);
   }
 
+  toggleEdgesVisibility(false);
   // レンダリングループ
   renderer.setAnimationLoop(() => {
     renderer.render(scene, camera);
     tick();
   });
 
-  toggleEdgesVisibility(false);
   // リサイズ処理
-  createTextPlane(scene);
   window.addEventListener("resize", onResize);
 
 }
