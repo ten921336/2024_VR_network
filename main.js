@@ -458,8 +458,10 @@ function init() {
   //スクイーズボタンを話したときの処理
   function onSqueezeEnd(event) {
     // updateText('crass : ' + nodeInfo[2][3]);
-    updateText('crass : ' + nodeInfo[2][lengthNum]);
-    lengthNum = 0;
+    if (lengthNum !== 0) {
+      updateText('crass : ' + nodeInfo[2][lengthNum]);
+      lengthNum = 0;
+    }
     toggleEdgesVisibility(true);
   }
 
@@ -625,6 +627,32 @@ function init() {
   // エッジを管理する配列を準備
   const edgeObjects = [];
 
+  // function findMatchingNodes(edges, nodeName) {
+  //   const matchingResults = [];
+
+  //   for (let i = 0; i < edges.length; i++) {
+  //     const source = edges[i].source;
+  //     const target = edges[i].target;
+
+  //     // source と一致する nodeName[j] を探す
+  //     const sourceIndex = nodeName.indexOf(String(source));
+  //     if (sourceIndex !== -1) {
+  //       // target と一致する nodeName[k] を探す
+  //       const targetIndex = nodeName.indexOf(String(target));
+  //       if (targetIndex !== -1) {
+  //         matchingResults.push({
+  //           edgeIndex: i,
+  //           sourceIndex: sourceIndex,
+  //           targetIndex: targetIndex
+  //         });
+  //       }
+  //     }
+  //   }
+  //   createEdge(nodeInfo[1][matchingResults], nodeInfo[1][i]);
+  // }
+  // findMatchingNodes(edges, nodeName);
+
+
   // エッジを作成する関数
   function createEdge(sourcePosition, targetPosition) {
     // エッジのジオメトリとマテリアルを作成
@@ -644,16 +672,17 @@ function init() {
 
   // 複数のエッジを描画する関数   再調整
   function renderEdges(edgesData, nodeName, nodePositions) {
-    let cou = 0;
     edgesData.forEach(edge => {
       const sourcePosition = nodePositions[edge.source];
       const targetPosition = nodePositions[edge.target];
 
+      console.log(sourcePosition + " and " + targetPosition);
       if (sourcePosition && targetPosition) {
         createEdge(sourcePosition, targetPosition);
       }
     });
   }
+
 
   // エッジの表示・非表示を切り替える関数
   function toggleEdgesVisibility(visible) {
@@ -932,7 +961,7 @@ function init() {
       group.add(node);
     });
 
-    // エッジを作成
+    // エッジを作成   co
     renderEdges(edgesData, nodeName, nodePositions);
     toggleEdgesVisibility(false); // 非表示
   }
