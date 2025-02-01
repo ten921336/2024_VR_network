@@ -9,7 +9,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 
 /* --------------- テキスト表示 ここから --------------- */
-function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 8, height = 8) {
+function createTextPlane(scene, initialText, x, y, z, width, height) {
   // 1. Canvas要素を作成
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
@@ -26,10 +26,19 @@ function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 8, he
 
     // テキストのスタイルを設定して描画
     context.fillStyle = 'white'; // テキスト色を白に設定
-    context.font = '25px Arial'; // フォントスタイル
+    context.font = '50px Arial'; // フォントスタイル
     context.textAlign = 'center'; // 中央揃え
-    context.textBaseline = 'middle'; // 中央基準
-    context.fillText(text, canvas.width / 2, canvas.height / 2); // テキストを描画
+    context.textBaseline = "bottom"; // 中央基準
+    // context.fillText(text, canvas.width / 2, canvas.height / 2); // テキストを描画
+    function drawMultilineText(context, text, x, y, lineHeight) {
+      const lines = text.split("\n"); // 改行文字で分割
+      lines.forEach((line, index) => {
+        context.fillText(line, x, y + index * lineHeight); // 各行を描画
+      });
+    }
+
+    // テキスト描画
+    drawMultilineText(context, text, canvas.width / 2, 50, 30);
   }
 
   // 初期テキストを描画
@@ -63,7 +72,7 @@ function createTextPlane(scene, initialText, x = 0, y = 1, z = -9, width = 8, he
 
 var str = '';
 //削除回数
-let deleteTimes = 15;
+let deleteTimes = 20;
 
 //CSVファイルをJavaScriptで扱うために使用する変数
 let networkData;
@@ -79,6 +88,7 @@ nodeInfo.push(nodeName, nodePositions, nodeCrass);
 
 //表示するテキストを変更するための変数
 var updateText;
+var selectText;
 /* --------------- 変数の用意 ここまで --------------- */
 
 
@@ -123,7 +133,9 @@ function init() {
   // カメラを作成
   const camera = new THREE.PerspectiveCamera(90, width / height);
   // カメラの初期位置を設定
-  camera.position.z = 10;
+  camera.position.x = 0;
+  camera.position.y = 1;
+  camera.position.z = 0;
 
   // カメラ用コンテナを作成
   const cameraContainer = new THREE.Object3D();
@@ -171,7 +183,7 @@ function init() {
     }
   }
 
-  loadCSVForFile2("coraContent.csv");
+  loadCSVForFile2("content.csv");
   loadCSVAndInit("cora.csv");
   //2
 
@@ -300,6 +312,10 @@ function init() {
   controller1.addEventListener('squeezestart', onSqueezeStart);
   controller1.addEventListener('squeezeend', onSqueezeEnd);
 
+
+  //
+
+
   // トリガーボタンを押した時の処理
   function onSelectStart(event) {
     const controller = event.target;
@@ -314,11 +330,7 @@ function init() {
       const originalPosition = { x: object.position.x, y: object.position.y, z: object.position.z };
 
       // シェイプを青く光らせる
-      // node.material.forEach((material) => {
-      //   if (material.emissive) {
-      //     material.emissive.b = 1; // 青く発光させる
-      //   }
-      // });
+      // material.emissive.b = 1; // 青く発光させる
 
       // オブジェクトの座標をコントローラーにアタッチ
       controller.attach(object);
@@ -382,11 +394,7 @@ function init() {
       const originalPosition = { x: object.position.x, y: object.position.y, z: object.position.z };
 
       // シェイプを青く光らせる
-      // node.material.forEach((material) => {
-      //   if (material.emissive) {
       //     material.emissive.b = 1; // 青く発光させる
-      //   }
-      // });
 
       if (object.position.z >= -20) {
         const matchingIndex = nodePositions.findIndex(node => (
@@ -426,11 +434,7 @@ function init() {
       // シェイプをグループにアタッチし、シェイプの色を戻す
       if (controller.userData.selected !== undefined) {
         const object = controller.userData.selected;
-        // node.material.forEach((material) => {
-        //   if (material.emissive) {
         //     material.emissive.b = 0; // 青く発光させる
-        //   }
-        // });
         group.attach(object);
         controller.userData.selected = undefined;
       }
@@ -444,11 +448,7 @@ function init() {
     // シェイプをグループにアタッチし、シェイプの色を戻す
     if (controller.userData.selected !== undefined) {
       const object = controller.userData.selected;
-      // node.material.forEach((material) => {
-      //   if (material.emissive) {
       //     material.emissive.b = 0; // 青く発光させる
-      //   }
-      // });
       group.attach(object);
       controller.userData.selected = undefined;
     }
@@ -459,7 +459,7 @@ function init() {
   function onSqueezeEnd(event) {
     // updateText('crass : ' + nodeInfo[2][3]);
     if (lengthNum !== 0) {
-      updateText('crass : ' + nodeInfo[2][lengthNum]);
+      updateText('\n\n<title>\n\n' + nodeInfo[0][lengthNum] + '\n\n\n <crass>\n\n' + nodeInfo[2][lengthNum]);
       lengthNum = 0;
     }
     toggleEdgesVisibility(true);
@@ -473,11 +473,7 @@ function init() {
   function cleanIntersected() {
     while (intersected.length) {
       const object = intersected.pop();
-      // node.material.forEach((material) => {
-      //   if (material.emissive) {
       //     material.emissive.r = 0; // 青く発光させる
-      //   }
-      // });
     }
   }
 
@@ -496,13 +492,16 @@ function init() {
       // 交差時は赤くする
       const intersection = intersections[0];
       const object = intersection.object;
-      // node.material.forEach((material) => {
-      //   if (material.emissive) {
-      //     material.emissive.r = 1; // 発光させる
-      //   }
-      // });
+      // material.emissive.r = 1; // 発光させる
       intersected.push(object);
 
+      const originalPosition = { x: object.position.x, y: object.position.y, z: object.position.z };
+
+      const num = nodePositions.findIndex(node => (
+        node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
+      ));
+      selectText('\n\n\n<title>\n\n' + nodeInfo[0][num] + '\n\n\n <crass>\n\n' + nodeInfo[2][num]);
+      // selectText('\n\n\n<title>\n\n' + '\n\n\n <crass>\n\n');
       // 交差時は光線の長さをシェイプまでにする
       line.scale.z = intersection.distance;
     } else {
@@ -528,10 +527,6 @@ function init() {
   //コントローラーイベントの処理
   function handleController(controller) {
     const userData = controller.userData;
-    if (userData.isSelecting === true) {
-      // コントローラーボタンが押された際の処理
-      console.log("コントローラーボタンが押された");
-    }
   }
   /* -------------------コントローラー設定 ここまで------------------- */
 
@@ -949,7 +944,31 @@ function init() {
         new THREE.MeshLambertMaterial({ color: 0xaaaaaa }), // +Z面（文字を描画）
       ];
 
-      const node = new THREE.Mesh(geometry, materials);
+      const material1 = new THREE.MeshLambertMaterial({ color: 0xff0000 });;
+      const material2 = new THREE.MeshLambertMaterial({ color: 0xff4500 });;
+      const material3 = new THREE.MeshLambertMaterial({ color: 0xffff00 });;
+      const material4 = new THREE.MeshLambertMaterial({ color: 0x104010 });;
+      const material5 = new THREE.MeshLambertMaterial({ color: 0x191970 });;
+      const material6 = new THREE.MeshLambertMaterial({ color: 0x800080 });;
+      const material7 = new THREE.MeshLambertMaterial({ color: 0x404040 });;
+
+      let node;
+      if (nodeCrass[nodeNum] == "Theory") {
+        node = new THREE.Mesh(geometry, material1);
+      } else if (nodeCrass[nodeNum] == "Rule_Learning") {
+        node = new THREE.Mesh(geometry, material2);
+      } else if (nodeCrass[nodeNum] == "Reinforcement_Learning") {
+        node = new THREE.Mesh(geometry, material3);
+      } else if (nodeCrass[nodeNum] == "Probabilistic_Methods") {
+        node = new THREE.Mesh(geometry, material4);
+      } else if (nodeCrass[nodeNum] == "Neural_Networks") {
+        node = new THREE.Mesh(geometry, material5);
+      } else if (nodeCrass[nodeNum] == "Genetic_Algorithms") {
+        node = new THREE.Mesh(geometry, material6);
+      } else {
+        node = new THREE.Mesh(geometry, material7);
+      }
+      // const node = new THREE.Mesh(geometry, materials);
       node.position.set(position.x, position.y, position.z);
 
       nodeCount += 1;
@@ -1028,13 +1047,13 @@ function init() {
     scene.add(line3);
     scene.add(line4);
 
-    updateText = createTextPlane(scene, 'init text', 0, 1, -10, 8, 8);
+    updateText = createTextPlane(scene, 'Loading...', -0, 1, -10, 8, 8);
     renderer.render(scene, camera);
   }
   /* -------------------ノード、エッジ削除 ここまで------------------- */
 
 
-
+  selectText = createTextPlane(controller0, '\n\n\n\nLoading...', 0, 2, -7, 4, 4);
 
   // フレーム毎に実行されるループイベント
   function tick() {
