@@ -253,7 +253,7 @@ function init() {
 
     //光源を作成
     const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(0, 0, 1);
+    light.position.set(0, 1, -1);
     light.castShadow = true;
     scene.add(light);
   }
@@ -459,7 +459,7 @@ function init() {
   function onSqueezeEnd(event) {
     // updateText('crass : ' + nodeInfo[2][3]);
     if (lengthNum !== 0) {
-      updateText('\n\n<title>\n\n' + nodeInfo[0][lengthNum] + '\n\n\n <crass>\n\n' + nodeInfo[2][lengthNum]);
+      updateText('\n\n< 論文ID >\n\n' + nodeInfo[0][lengthNum] + '\n\n\n < 分野 >\n\n' + nodeInfo[2][lengthNum]);
       lengthNum = 0;
     }
     toggleEdgesVisibility(true);
@@ -500,7 +500,7 @@ function init() {
       const num = nodePositions.findIndex(node => (
         node.x === originalPosition.x && node.y === originalPosition.y && node.z === originalPosition.z
       ));
-      selectText('\n\n\n<title>\n\n' + nodeInfo[0][num] + '\n\n\n <crass>\n\n' + nodeInfo[2][num]);
+      selectText('\n\n\n< 論文ID >\n\n' + nodeInfo[0][num] + '\n\n\n < 分野 >\n\n' + nodeInfo[2][num]);
       // selectText('\n\n\n<title>\n\n' + '\n\n\n <crass>\n\n');
       // 交差時は光線の長さをシェイプまでにする
       line.scale.z = intersection.distance;
@@ -944,13 +944,13 @@ function init() {
         new THREE.MeshLambertMaterial({ color: 0xaaaaaa }), // +Z面（文字を描画）
       ];
 
-      const material1 = new THREE.MeshLambertMaterial({ color: 0xff0000 });;
-      const material2 = new THREE.MeshLambertMaterial({ color: 0xff4500 });;
-      const material3 = new THREE.MeshLambertMaterial({ color: 0xffff00 });;
-      const material4 = new THREE.MeshLambertMaterial({ color: 0x104010 });;
-      const material5 = new THREE.MeshLambertMaterial({ color: 0x191970 });;
-      const material6 = new THREE.MeshLambertMaterial({ color: 0x800080 });;
-      const material7 = new THREE.MeshLambertMaterial({ color: 0x404040 });;
+      const material1 = new THREE.MeshLambertMaterial({ color: 0x004D32 });;
+      const material2 = new THREE.MeshLambertMaterial({ color: 0x0B3D2E });;
+      const material3 = new THREE.MeshLambertMaterial({ color: 0x003F4D });;
+      const material4 = new THREE.MeshLambertMaterial({ color: 0x1A2A40 });;
+      const material5 = new THREE.MeshLambertMaterial({ color: 0x4D0E24 });;
+      const material6 = new THREE.MeshLambertMaterial({ color: 0x2B2B2B });;
+      const material7 = new THREE.MeshLambertMaterial({ color: 0x3B2314 });;  //  色の設定
 
       let node;
       if (nodeCrass[nodeNum] == "Theory") {
