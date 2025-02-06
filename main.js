@@ -945,12 +945,12 @@ function init() {
       ];
 
       const material1 = new THREE.MeshLambertMaterial({ color: 0x004D32 });;
-      const material2 = new THREE.MeshLambertMaterial({ color: 0x0B3D2E });;
-      const material3 = new THREE.MeshLambertMaterial({ color: 0x003F4D });;
+      const material2 = new THREE.MeshLambertMaterial({ color: 0x3D2C23 });;
+      const material3 = new THREE.MeshLambertMaterial({ color: 0x191970 });;
       const material4 = new THREE.MeshLambertMaterial({ color: 0x1A2A40 });;
       const material5 = new THREE.MeshLambertMaterial({ color: 0x4D0E24 });;
-      const material6 = new THREE.MeshLambertMaterial({ color: 0x2B2B2B });;
-      const material7 = new THREE.MeshLambertMaterial({ color: 0x3B2314 });;  //  色の設定
+      const material6 = new THREE.MeshLambertMaterial({ color: 0xB2B2B2 });;
+      const material7 = new THREE.MeshLambertMaterial({ color: 0x3B4828 });;  //  色の設定
 
       let node;
       if (nodeCrass[nodeNum] == "Theory") {
