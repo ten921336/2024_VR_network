@@ -183,7 +183,7 @@ function init() {
     }
   }
 
-  loadCSVForFile2("content.csv");
+  loadCSVForFile2("coraContent.csv");
   loadCSVAndInit("cora.csv");
   //2
 
